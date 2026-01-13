@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}文件管理 - 文件分享系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-file-alt me-2"></i>文件管理
+                </h4>
+                <a href="{{ url_for('admin.admin_users') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-users me-1"></i>用户管理
+                </a>
+            </div>
+            <div class="card-body">
+                {% if files %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>文件名</th>
+                                    <th>上传者</th>
+                                    <th>大小</th>
+                                    <th>分享类型</th>
+                                    <th>权限</th>
+                                    <th>上传时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for file in files %}
+                                    <tr>
+                                        <td>{{ file.id }}</td>
+                                        <td>
+                                            <strong title="{{ file.original_filename }}">{{ file.original_filename[:25] }}{% if file.original_filename|length > 25 %}...{% endif %}</strong>
+                                        </td>
+                                        <td>{{ file.user.username }}</td>
+                                        <td>
+                                            未知
+                                        </td>
+                                        <td>
+                                            {% if file.share_type == 'public' %}
+                                                <span class="badge bg-success">公开</span>
+                                            {% elif file.share_type == 'link_only' %}
+                                                <span class="badge bg-info">链接分享</span>
+                                            {% elif file.share_type == 'specified_users' %}
+                                                <span class="badge bg-warning">指定用户</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">未知</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if file.allow_download %}
+                                                <i class="fas fa-download text-success me-2" title="允许下载"></i>
+                                            {% else %}
+                                                <i class="fas fa-download text-muted me-2" title="禁止下载"></i>
+                                            {% endif %}
+                                            {% if file.allow_view %}
+                                                <i class="fas fa-eye text-success me-2" title="允许查看"></i>
+                                            {% else %}
+                                                <i class="fas fa-eye text-muted me-2" title="禁止查看"></i>
+                                            {% endif %}
+                                            {% if file.allow_edit %}
+                                                <i class="fas fa-edit text-success" title="允许编辑"></i>
+                                            {% else %}
+                                                <i class="fas fa-edit text-muted" title="禁止编辑"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ file.upload_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('admin.admin_edit_file', file_id=file.id) }}"
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <form method="POST" action="{{ url_for('admin.admin_delete_file', file_id=file.id) }}"
+                                                      class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-folder-open text-muted" style="font-size: 4rem;"></i>
+                        <h5 class="mt-3 text-muted">暂无文件</h5>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>文件统计
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            <h3 class="text-primary">{{ files|length }}</h3>
+                            <p class="mb-0">总文件数</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            <h3 class="text-success">
+                                {% set public_count = 0 %}
+                                {% for file in files %}
+                                    {% if file.share_type == 'public' %}
+                                        {% set public_count = public_count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ public_count }}
+                            </h3>
+                            <p class="mb-0">公开文件</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            <h3 class="text-info">
+                                {% set link_count = 0 %}
+                                {% for file in files %}
+                                    {% if file.share_type == 'link_only' %}
+                                        {% set link_count = link_count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ link_count }}
+                            </h3>
+                            <p class="mb-0">链接分享文件</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            <h3 class="text-warning">
+                                {% set private_count = 0 %}
+                                {% for file in files %}
+                                    {% if file.share_type == 'specified_users' %}
+                                        {% set private_count = private_count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ private_count }}
+                            </h3>
+                            <p class="mb-0">指定用户文件</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}用户管理 - 文件分享系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-users me-2"></i>用户管理
+                </h4>
+                <div>
+                    <a href="{{ url_for('admin.admin_create_user') }}" class="btn btn-success me-2">
+                        <i class="fas fa-user-plus me-1"></i>创建用户
+                    </a>
+                    <a href="{{ url_for('admin.admin_config') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-cogs me-1"></i>系统配置
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if users %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>用户名</th>
+                                    <th>角色</th>
+                                    <th>注册时间</th>
+                                    <th>文件数量</th>
+                                    <th>总文件大小</th>
+                                    <th>单文件限制</th>
+                                    <th>总数量限制</th>
+                                    <th>总大小限制</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                    <tr>
+                                        <td>{{ user.id }}</td>
+                                        <td>
+                                            <strong>{{ user.username }}</strong>
+                                            {% if user.role == 'admin' %}
+                                                <span class="badge bg-danger ms-1">管理员</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if user.role == 'admin' %}
+                                                <span class="text-danger">管理员</span>
+                                            {% else %}
+                                                <span class="text-primary">普通用户</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>{{ user.get_total_files_count() }}</td>
+                                        <td>{{ "%.2f"|format(user.get_total_files_size() / (1024*1024*1024)) }} GB</td>
+                                        <td>{{ user.max_file_size // (1024*1024) }} MB</td>
+                                        <td>{{ user.max_total_files }}</td>
+                                        <td>{{ user.max_total_size // (1024*1024*1024) }} GB</td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('admin.admin_edit_user', user_id=user.id) }}"
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{{ url_for('admin.admin_user_limits', user_id=user.id) }}"
+                                                   class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-cog"></i>
+                                                </a>
+                                                {% if user.id != current_user.id %}
+                                                    <form method="POST" action="{{ url_for('admin.admin_delete_user', user_id=user.id) }}"
+                                                          class="d-inline">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users text-muted" style="font-size: 4rem;"></i>
+                        <h5 class="mt-3 text-muted">暂无用户</h5>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>系统统计
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            <h3 class="text-primary">{{ users|length }}</h3>
+                            <p class="mb-0">总用户数</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            <h3 class="text-success">
+                                {% set total_files = 0 %}
+                                {% for user in users %}
+                                    {% set total_files = total_files + user.get_total_files_count() %}
+                                {% endfor %}
+                                {{ total_files }}
+                            </h3>
+                            <p class="mb-0">总文件数</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            <h3 class="text-info">
+                                {% set total_size = 0 %}
+                                {% for user in users %}
+                                    {% set total_size = total_size + user.get_total_files_size() %}
+                                {% endfor %}
+                                {{ "%.1f"|format(total_size / (1024*1024*1024)) }}
+                            </h3>
+                            <p class="mb-0">总存储量 (GB)</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3">
+                            <h3 class="text-warning">
+                                {% set admin_count = 0 %}
+                                {% for user in users %}
+                                    {% if user.role == 'admin' %}
+                                        {% set admin_count = admin_count + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ admin_count }}
+                            </h3>
+                            <p class="mb-0">管理员数量</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

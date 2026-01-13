@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}编辑文件 - 文件分享系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-file-edit me-2"></i>编辑文件
+                </h4>
+                <p class="mb-0 mt-2 text-muted">ID: {{ file.id }}</p>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.original_filename.label(class="form-label") }}
+                        {{ form.original_filename(class="form-control") }}
+                        {% if form.original_filename.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.original_filename.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.share_type.label(class="form-label") }}
+                        {{ form.share_type(class="form-select") }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">权限设置</label>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.allow_view(class="form-check-input") }}
+                                    {{ form.allow_view.label(class="form-check-label") }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.allow_download(class="form-check-input") }}
+                                    {{ form.allow_download.label(class="form-check-label") }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.allow_edit(class="form-check-input") }}
+                                    {{ form.allow_edit.label(class="form-check-label") }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.password.label(class="form-label") }}
+                        {{ form.password(class="form-control") }}
+                        <div class="form-text">
+                            可选：设置访问密码（留空则不设置密码）
+                        </div>
+                        {% if form.password.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.password.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <a href="{{ url_for('admin.admin_files') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>返回文件列表
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>文件信息
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>上传者：</strong>{{ file.user.username }}</p>
+                        <p class="mb-1"><strong>上传时间：</strong>{{ file.upload_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                        <p class="mb-1"><strong>文件路径：</strong>{{ file.filepath }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>分享类型：</strong>
+                            {% if file.share_type == 'public' %}
+                                <span class="badge bg-success">公开分享</span>
+                            {% elif file.share_type == 'link_only' %}
+                                <span class="badge bg-info">链接分享</span>
+                            {% elif file.share_type == 'specified_users' %}
+                                <span class="badge bg-warning">指定用户</span>
+                            {% else %}
+                                <span class="badge bg-secondary">未知</span>
+                            {% endif %}
+                        </p>
+                        <p class="mb-1"><strong>过期时间：</strong>
+                            {% if file.expiry_time %}
+                                {{ file.expiry_time.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                                永不过期
+                            {% endif %}
+                        </p>
+                        {% if file.allowed_users %}
+                            <p class="mb-1"><strong>允许用户：</strong>
+                                <span class="badge bg-light text-dark">{{ file.allowed_users }}</span>
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

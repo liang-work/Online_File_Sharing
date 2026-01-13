@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}用户限制设置 - 文件分享系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-cog me-2"></i>用户限制设置
+                </h4>
+                <p class="mb-0 mt-2 text-muted">用户: {{ user.username }}</p>
+            </div>
+            <div class="card-body">
+                <!-- 用户当前状态 -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h5 class="text-primary">{{ user.get_total_files_count() }}</h5>
+                                <p class="mb-0">当前文件数量</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h5 class="text-success">{{ "%.2f"|format(user.get_total_files_size() / (1024*1024*1024)) }} GB</h5>
+                                <p class="mb-0">当前存储使用量</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-4">
+                        <h5 class="mb-3">限制设置</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                {{ form.max_file_size.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.max_file_size(class="form-control") }}
+                                    <span class="input-group-text">MB</span>
+                                </div>
+                                <div class="form-text">
+                                    单文件最大大小限制
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.max_total_files.label(class="form-label") }}
+                                {{ form.max_total_files(class="form-control") }}
+                                <div class="form-text">
+                                    总文件数量限制
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.max_total_size.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.max_total_size(class="form-control") }}
+                                    <span class="input-group-text">GB</span>
+                                </div>
+                                <div class="form-text">
+                                    总文件大小限制
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                        <a href="{{ url_for('admin.admin_users') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>返回用户列表
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>设置说明
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>
+                        <strong>单文件大小限制：</strong>用户每次上传的单个文件不能超过此大小
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>
+                        <strong>总文件数量限制：</strong>用户可以拥有的文件总数
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-lightbulb text-warning me-2"></i>
+                        <strong>总文件大小限制：</strong>用户所有文件的总大小不能超过此限制
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                        <strong>注意：</strong>降低限制不会影响已存在的文件，但用户将无法上传新文件
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

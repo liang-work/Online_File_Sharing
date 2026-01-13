@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - 文件分享系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    {% if current_user.is_authenticated %}
+                        我的文件
+                    {% else %}
+                        公开文件
+                    {% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                {% if files %}
+                    <div class="row">
+                        {% for file in files %}
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="card file-card h-100">
+                                    <div class="card-body d-flex flex-column">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <i class="fas fa-file text-primary me-3" style="font-size: 2rem;"></i>
+                                            <div class="flex-grow-1">
+                                                <h6 class="card-title mb-1 text-truncate" title="{{ file.original_filename }}">
+                                                    <a href="{{ url_for('files.file_details', file_id=file.id) }}" class="text-decoration-none text-dark">
+                                                        {{ file.original_filename }}
+                                                    </a>
+                                                </h6>
+                                                <small class="text-muted">
+                                                    {{ file.upload_time.strftime('%Y-%m-%d %H:%M') }}
+                                                </small>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            {% if file.share_type == 'public' %}
+                                                <span class="badge bg-success me-2">
+                                                    <i class="fas fa-globe me-1"></i>公开分享
+                                                </span>
+                                            {% elif file.share_type == 'link_only' %}
+                                                <span class="badge bg-info me-2">
+                                                    <i class="fas fa-link me-1"></i>链接分享
+                                                </span>
+                                            {% elif file.share_type == 'specified_users' %}
+                                                <span class="badge bg-warning me-2">
+                                                    <i class="fas fa-user-friends me-1"></i>指定用户
+                                                </span>
+                                            {% endif %}
+
+                                            {% if file.password %}
+                                                <span class="badge bg-secondary me-2">
+                                                    <i class="fas fa-key me-1"></i>密码保护
+                                                </span>
+                                            {% endif %}
+
+                                            <div class="mt-2">
+                                                <small class="text-muted d-block">
+                                                    <i class="fas fa-eye me-1"></i>查看: {% if file.allow_view %}允许{% else %}禁止{% endif %} |
+                                                    <i class="fas fa-download me-1"></i>下载: {% if file.allow_download %}允许{% else %}禁止{% endif %} |
+                                                    <i class="fas fa-edit me-1"></i>编辑: {% if file.allow_edit %}允许{% else %}禁止{% endif %}
+                                                </small>
+                                                {% if file.expiry_time %}
+                                                    <small class="text-muted d-block">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        过期时间: {{ file.expiry_time.strftime('%Y-%m-%d %H:%M') }}
+                                                    </small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-auto">
+                                            <div class="d-flex gap-2">
+                                                <a href="{{ url_for('files.file_details', file_id=file.id) }}"
+                                                   class="btn btn-info btn-sm">
+                                                    <i class="fas fa-info-circle me-1"></i>详情
+                                                </a>
+                                                {% if file.allow_download %}
+                                                    <a href="{{ url_for('files.view_file', file_id=file.id) }}"
+                                                       class="btn btn-primary btn-sm flex-fill">
+                                                        <i class="fas fa-download me-1"></i>下载
+                                                    </a>
+                                                {% endif %}
+                                                {% if current_user.is_authenticated and (current_user.id == file.user_id or current_user.role == 'admin') %}
+                                                    <a href="{{ url_for('files.share_file', file_id=file.id) }}"
+                                                       class="btn btn-outline-secondary btn-sm">
+                                                        <i class="fas fa-share me-1"></i>分享设置
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-folder-open text-muted" style="font-size: 4rem;"></i>
+                        <h5 class="mt-3 text-muted">
+                            {% if current_user.is_authenticated %}
+                                还没有上传文件
+                            {% else %}
+                                没有公开文件
+                            {% endif %}
+                        </h5>
+                        {% if current_user.is_authenticated %}
+                            <a href="{{ url_for('files.upload') }}" class="btn btn-primary mt-3">
+                                <i class="fas fa-upload me-2"></i>上传第一个文件
+                            </a>
+                        {% else %}
+                            <p class="mt-3">请先 <a href="{{ url_for('auth.login') }}">登录</a> 查看更多文件</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

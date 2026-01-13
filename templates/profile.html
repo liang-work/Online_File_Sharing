@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}个人资料 - 文件分享系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-user me-2"></i>个人资料
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- 当前资料显示 -->
+                <div class="row mb-4">
+                    <div class="col-md-6 text-center">
+                        <div class="mb-3">
+                            {% if current_user.avatar_url %}
+                                <img src="{{ current_user.avatar_url }}" alt="头像" class="rounded-circle mb-3" style="width: 100px; height: 100px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 100px; height: 100px;">
+                                    <i class="fas fa-user fa-3x text-muted"></i>
+                                </div>
+                            {% endif %}
+                            <h5>{{ current_user.nickname or current_user.username }}</h5>
+                            <p class="text-muted mb-1">{{ current_user.username }}</p>
+                            <span class="badge bg-{{ 'primary' if current_user.role == 'user' else 'danger' }}">
+                                {{ '普通用户' if current_user.role == 'user' else '管理员' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6><i class="fas fa-calendar me-2"></i>注册时间</h6>
+                            <p>{{ current_user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6><i class="fas fa-language me-2"></i>语言设置</h6>
+                            <p>{{ '中文' if current_user.language == 'zh' else 'English' }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6><i class="fas fa-palette me-2"></i>主题设置</h6>
+                            <p>{{ '亮色' if current_user.theme == 'light' else '暗色' }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6><i class="fas fa-hdd me-2"></i>存储使用情况</h6>
+                            <p>{{ "%.2f"|format(current_user.get_total_files_size() / (1024*1024*1024)) }} GB / {{ "%.1f"|format(current_user.max_total_size / (1024*1024*1024)) }} GB</p>
+                            <div class="progress" style="height: 8px;">
+                                {% set usage_percent = (current_user.get_total_files_size() / current_user.max_total_size * 100) %}
+                                <div class="progress-bar {% if usage_percent < 70 %}bg-success{% elif usage_percent < 90 %}bg-warning{% else %}bg-danger{% endif %}"
+                                     style="width: {{ usage_percent }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.nickname.label(class="form-label") }}
+                        {{ form.nickname(class="form-control") }}
+                        <div class="form-text">
+                            设置您的昵称，将显示在导航栏中
+                        </div>
+                        {% if form.nickname.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.nickname.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.avatar_url.label(class="form-label") }}
+                        {{ form.avatar_url(class="form-control") }}
+                        <div class="form-text">
+                            输入头像图片的URL链接（支持http/https链接）
+                        </div>
+                        {% if form.avatar_url.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.avatar_url.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.language.label(class="form-label") }}
+                            {{ form.language(class="form-select") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.theme.label(class="form-label") }}
+                            {{ form.theme(class="form-select") }}
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>使用说明
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-user me-2 text-primary"></i>
+                        <strong>昵称：</strong>设置后将在导航栏显示，支持表情符号和特殊字符
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-image me-2 text-success"></i>
+                        <strong>头像：</strong>支持任何图片链接，建议使用正方形图片以获得最佳显示效果
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-language me-2 text-info"></i>
+                        <strong>语言：</strong>选择界面语言（目前支持中文和英文）
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-palette me-2 text-warning"></i>
+                        <strong>主题：</strong>选择亮色或暗色主题
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-save me-2 text-secondary"></i>
+                        <strong>保存：</strong>修改后点击保存按钮，所有设置将立即生效
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

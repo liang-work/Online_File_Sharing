@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}系统配置 - 文件分享系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>系统配置
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-4">
+                        <h5 class="mb-3">注册设置</h5>
+                        <div class="form-check form-switch">
+                            {{ form.allow_registration(class="form-check-input") }}
+                            {{ form.allow_registration.label(class="form-check-label") }}
+                        </div>
+                        <div class="form-text">
+                            控制是否允许新用户注册
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5 class="mb-3">默认用户限制</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                {{ form.default_max_file_size.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.default_max_file_size(class="form-control") }}
+                                    <span class="input-group-text">MB</span>
+                                </div>
+                                <div class="form-text">
+                                    新用户单文件大小限制
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.default_max_total_files.label(class="form-label") }}
+                                {{ form.default_max_total_files(class="form-control") }}
+                                <div class="form-text">
+                                    新用户总文件数量限制
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.default_max_total_size.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.default_max_total_size(class="form-control") }}
+                                    <span class="input-group-text">GB</span>
+                                </div>
+                                <div class="form-text">
+                                    新用户总文件大小限制
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5 class="mb-3">界面设置</h5>
+                        <div class="mb-3">
+                            {{ form.background_image.label(class="form-label") }}
+                            {{ form.background_image(class="form-control") }}
+                            <div class="form-text">
+                                设置系统背景图片的URL路径（留空使用默认渐变背景）
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                {{ form.default_theme.label(class="form-label") }}
+                                {{ form.default_theme(class="form-select") }}
+                                <div class="form-text">
+                                    新用户的默认主题设置
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.default_language.label(class="form-label") }}
+                                {{ form.default_language(class="form-select") }}
+                                <div class="form-text">
+                                    新用户的默认语言设置
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                {{ form.primary_color.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.primary_color(class="form-control", type="color") }}
+                                    <input type="text" class="form-control" id="colorValue" readonly>
+                                </div>
+                                <div class="form-text">
+                                    系统主题色
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>配置说明
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>注册设置：</strong>控制新用户是否可以注册账号
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>单文件大小限制：</strong>每个用户上传的单个文件最大大小
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>总文件数量限制：</strong>每个用户可以上传的文件总数
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>总文件大小限制：</strong>每个用户所有文件的总大小限制
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+// 同步颜色选择器和文本框的值
+document.addEventListener('DOMContentLoaded', function() {
+    const colorInput = document.querySelector('input[type="color"]');
+    const colorValueInput = document.getElementById('colorValue');
+
+    if (colorInput && colorValueInput) {
+        // 初始化文本框的值
+        colorValueInput.value = colorInput.value;
+
+        // 监听颜色选择器的变化
+        colorInput.addEventListener('input', function() {
+            colorValueInput.value = this.value;
+        });
+
+        // 监听文本框的变化
+        colorValueInput.addEventListener('input', function() {
+            if (/^#[0-9A-F]{6}$/i.test(this.value)) {
+                colorInput.value = this.value;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

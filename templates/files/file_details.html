@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}{{ file.original_filename }} - 文件详情{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-file me-2"></i>{{ file.original_filename }}
+                </h4>
+                <div>
+                    {% if file.allow_download %}
+                        <a href="{{ url_for('view_file', file_id=file.id) }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-download me-1"></i>下载
+                        </a>
+                    {% endif %}
+                    {% if current_user.is_authenticated and (current_user.id == file.user_id or current_user.role == 'admin') %}
+                        <a href="{{ url_for('share_file', file_id=file.id) }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-share me-1"></i>分享设置
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- 文件预览 -->
+                {% if can_preview %}
+                    <div class="mb-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-eye me-2"></i>文件预览
+                        </h5>
+                        <div class="border rounded p-3 bg-light">
+                            {% if preview_type == 'image' %}
+                                <img src="{{ url_for('view_file', file_id=file.id) }}" class="img-fluid rounded" alt="{{ file.original_filename }}" style="max-height: 400px;">
+                            {% elif preview_type == 'video' %}
+                                <video controls class="w-100 rounded" style="max-height: 400px;">
+                                    <source src="{{ url_for('view_file', file_id=file.id) }}" type="video/mp4">
+                                    您的浏览器不支持视频播放。
+                                </video>
+                            {% elif preview_type == 'audio' %}
+                                <audio controls class="w-100">
+                                    <source src="{{ url_for('view_file', file_id=file.id) }}" type="audio/mpeg">
+                                    您的浏览器不支持音频播放。
+                                </audio>
+                            {% elif preview_type == 'pdf' %}
+                                <iframe src="{{ url_for('view_file', file_id=file.id) }}" class="w-100 rounded" style="height: 400px;" frameborder="0"></iframe>
+                            {% elif preview_type == 'text' %}
+                                <pre class="bg-white p-3 rounded border" style="max-height: 400px; overflow-y: auto;">
+                                    <!-- 这里可以添加文本内容预览 -->
+                                    <code>文件内容预览功能</code>
+                                </pre>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- 文件信息 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="mb-3">
+                            <i class="fas fa-info-circle me-2"></i>基本信息
+                        </h5>
+                        <table class="table table-sm">
+                            <tr>
+                                <td class="fw-bold">文件名：</td>
+                                <td>{{ file.original_filename }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">文件大小：</td>
+                                <td>
+                                    {% if file_size %}
+                                        {% if file_size < 1024 %}
+                                            {{ file_size }} B
+                                        {% elif file_size < 1024*1024 %}
+                                            {{ "%.1f"|format(file_size / 1024) }} KB
+                                        {% elif file_size < 1024*1024*1024 %}
+                                            {{ "%.1f"|format(file_size / (1024*1024)) }} MB
+                                        {% else %}
+                                            {{ "%.2f"|format(file_size / (1024*1024*1024)) }} GB
+                                        {% endif %}
+                                    {% else %}
+                                        未知
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">上传者：</td>
+                                <td>
+                                    {% if file.user.avatar_url %}
+                                        <img src="{{ file.user.avatar_url }}" alt="头像" class="rounded-circle me-2" style="width: 24px; height: 24px; object-fit: cover;">
+                                    {% endif %}
+                                    {{ file.user.nickname or file.user.username }}
+                                    {% if file.user.role == 'admin' %}
+                                        <span class="badge bg-danger ms-1">管理员</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">上传时间：</td>
+                                <td>{{ file.upload_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="mb-3">
+                            <i class="fas fa-share me-2"></i>分享信息
+                        </h5>
+                        <table class="table table-sm">
+                            <tr>
+                                <td class="fw-bold">分享类型：</td>
+                                <td>
+                                    {% if file.share_type == 'public' %}
+                                        <span class="badge bg-success">公开分享</span>
+                                    {% elif file.share_type == 'link_only' %}
+                                        <span class="badge bg-info">链接分享</span>
+                                    {% elif file.share_type == 'specified_users' %}
+                                        <span class="badge bg-warning">指定用户</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">未知</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">查看权限：</td>
+                                <td>
+                                    {% if file.allow_view %}
+                                        <i class="fas fa-check text-success"></i> 允许
+                                    {% else %}
+                                        <i class="fas fa-times text-danger"></i> 禁止
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">下载权限：</td>
+                                <td>
+                                    {% if file.allow_download %}
+                                        <i class="fas fa-check text-success"></i> 允许
+                                    {% else %}
+                                        <i class="fas fa-times text-danger"></i> 禁止
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">编辑权限：</td>
+                                <td>
+                                    {% if file.allow_edit %}
+                                        <i class="fas fa-check text-success"></i> 允许
+                                    {% else %}
+                                        <i class="fas fa-times text-danger"></i> 禁止
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">访问密码：</td>
+                                <td>
+                                    {% if file.password %}
+                                        <i class="fas fa-lock text-warning"></i> 已设置
+                                    {% else %}
+                                        <i class="fas fa-unlock text-success"></i> 无密码
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">过期时间：</td>
+                                <td>
+                                    {% if file.expiry_time %}
+                                        {{ file.expiry_time.strftime('%Y-%m-%d %H:%M') }}
+                                        {% if current_time > file.expiry_time %}
+                                            <span class="badge bg-danger ms-1">已过期</span>
+                                        {% endif %}
+                                    {% else %}
+                                        永不过期
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 描述信息 -->
+                {% if file.description %}
+                    <div class="mt-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-align-left me-2"></i>文件描述
+                        </h5>
+                        <div class="border rounded p-3 bg-light">
+                            {{ file.description }}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- 发现者信息 -->
+                {% if file.discovered_by %}
+                    <div class="mt-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-user-tag me-2"></i>发现者
+                        </h5>
+                        <div class="border rounded p-3 bg-light">
+                            <strong>{{ file.discovered_by }}</strong>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- 标签信息 -->
+                {% if file.tags %}
+                    <div class="mt-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-tags me-2"></i>标签
+                        </h5>
+                        <div class="border rounded p-3 bg-light">
+                            {% for tag in file.tags.split(',') %}
+                                {% if tag.strip() %}
+                                    <span class="badge bg-primary me-1">{{ tag.strip() }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- 允许用户列表 -->
+                {% if file.share_type == 'specified_users' and file.allowed_users %}
+                    <div class="mt-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-users me-2"></i>允许访问的用户
+                        </h5>
+                        <div class="border rounded p-3 bg-light">
+                            {% set allowed_list = file.allowed_users %}
+                            {% if allowed_list %}
+                                {% for user in allowed_list %}
+                                    <span class="badge bg-info me-1">{{ user }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-footer text-center">
+                <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>返回首页
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

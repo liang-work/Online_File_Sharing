@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}分享设置 - 文件分享系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-share-alt me-2"></i>分享设置
+                </h4>
+                <p class="mb-0 mt-2 text-muted">{{ file.original_filename }}</p>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-4">
+                        <h5 class="mb-3">分享类型</h5>
+                        {{ form.share_type(class="form-select") }}
+                        <div class="form-text">
+                            {% if file.share_type == 'public' %}
+                                <span class="text-success">
+                                    <i class="fas fa-globe me-1"></i>当前设置为公开分享，所有人都可以访问
+                                </span>
+                            {% elif file.share_type == 'link_only' %}
+                                <span class="text-info">
+                                    <i class="fas fa-link me-1"></i>当前设置为链接分享，任何登录用户都可以访问
+                                </span>
+                            {% elif file.share_type == 'specified_users' %}
+                                <span class="text-warning">
+                                    <i class="fas fa-user-friends me-1"></i>当前设置为指定用户分享，只有指定用户才能访问
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5 class="mb-3">权限设置</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.allow_view(class="form-check-input") }}
+                                    {{ form.allow_view.label(class="form-check-label") }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.allow_download(class="form-check-input") }}
+                                    {{ form.allow_download.label(class="form-check-label") }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.allow_edit(class="form-check-input") }}
+                                    {{ form.allow_edit.label(class="form-check-label") }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-text">
+                            设置其他用户对文件的操作权限
+                        </div>
+                    </div>
+
+                    <div class="mb-4" id="allowedUsersGroup" style="display: none;">
+                        <h5 class="mb-3">允许的用户</h5>
+                        {{ form.allowed_users(class="form-control", rows="3", placeholder="输入用户名，每行一个") }}
+                        <div class="form-text">
+                            只有列出的用户才能访问此文件
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5 class="mb-3">过期设置</h5>
+                        {{ form.expiry_type(class="form-select") }}
+                        <div class="mt-3" id="expiryHoursGroup" style="display: none;">
+                            {{ form.expiry_hours.label(class="form-label") }}
+                            {{ form.expiry_hours(class="form-select") }}
+                            <div class="form-text">
+                                选择预设的过期时间
+                            </div>
+                        </div>
+                        <div class="mt-3" id="customExpiryGroup" style="display: none;">
+                            {{ form.custom_expiry.label(class="form-label") }}
+                            {{ form.custom_expiry(class="form-control", placeholder="YYYY-MM-DD HH:MM") }}
+                            <div class="form-text">
+                                自定义过期时间，格式：年-月-日 时:分
+                            </div>
+                        </div>
+                        <div class="form-text">
+                            {% if file.expiry_time %}
+                                当前过期时间：{{ file.expiry_time.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                                当前设置为永不过期
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5 class="mb-3">访问密码</h5>
+                        {{ form.password.label(class="form-label") }}
+                        {{ form.password(class="form-control") }}
+                        <div class="form-text">
+                            {% if file.password %}
+                                当前已设置密码保护。留空保持现有密码，输入新密码修改，清空则移除密码保护。
+                            {% else %}
+                                可选：设置访问密码保护文件（留空则不设置密码）
+                            {% endif %}
+                        </div>
+                        {% if form.password.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.password.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>返回
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-link me-2"></i>分享链接
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="shareLink" readonly
+                           value="{{ url_for('files.view_file', file_id=file.id, _external=True) }}">
+                    <button class="btn btn-outline-primary" type="button" onclick="copyLink()">
+                        <i class="fas fa-copy me-1"></i>复制链接
+                    </button>
+                </div>
+                <div class="form-text mt-2">
+                    通过此链接分享文件给其他人
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const shareTypeSelect = document.querySelector('select[name="share_type"]');
+    const expiryTypeSelect = document.querySelector('select[name="expiry_type"]');
+    const allowedUsersGroup = document.getElementById('allowedUsersGroup');
+    const expiryHoursGroup = document.getElementById('expiryHoursGroup');
+    const customExpiryGroup = document.getElementById('customExpiryGroup');
+
+    // 分享类型选择事件
+    shareTypeSelect.addEventListener('change', function() {
+        if (this.value === 'specified_users') {
+            allowedUsersGroup.style.display = 'block';
+        } else {
+            allowedUsersGroup.style.display = 'none';
+        }
+    });
+
+    // 过期类型选择事件
+    expiryTypeSelect.addEventListener('change', function() {
+        expiryHoursGroup.style.display = 'none';
+        customExpiryGroup.style.display = 'none';
+
+        if (this.value === 'hours') {
+            expiryHoursGroup.style.display = 'block';
+        } else if (this.value === 'custom') {
+            customExpiryGroup.style.display = 'block';
+        }
+    });
+
+    // 初始化显示状态
+    shareTypeSelect.dispatchEvent(new Event('change'));
+    expiryTypeSelect.dispatchEvent(new Event('change'));
+});
+
+function copyLink() {
+    const linkInput = document.getElementById('shareLink');
+    linkInput.select();
+    linkInput.setSelectionRange(0, 99999);
+
+    navigator.clipboard.writeText(linkInput.value).then(function() {
+        // 显示复制成功提示
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check me-1"></i>已复制';
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-success');
+
+        setTimeout(function() {
+            button.innerHTML = originalText;
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-primary');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('复制失败:', err);
+    });
+}
+</script>
+{% endblock %}
+{% endblock %}
