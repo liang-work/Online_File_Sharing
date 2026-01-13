@@ -15,7 +15,8 @@ from werkzeug.security import generate_password_hash
 # 添加当前目录到Python路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from app import app, db, User, File, Config
+from app import app, db
+from models import User, File, Config
 
 # 初始化迁移
 migrate_obj = Migrate(app, db)
