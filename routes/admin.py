@@ -59,7 +59,7 @@ def admin_config():
         flash('配置已保存')
         return redirect(url_for('admin.admin_config'))
 
-    return render_template('admin/admin_config.html', form=form)
+    return render_template('admin/admin_config.html', form=form, config=config_dict)
 
 @admin_bp.route('/users')
 @login_required
@@ -69,7 +69,7 @@ def admin_users():
         return redirect(url_for('main.index'))
 
     users = User.query.all()
-    return render_template('admin/admin_users.html', users=users)
+    return render_template('admin/admin_users.html', users=users, config=get_config_dict())
 
 @admin_bp.route('/user/<int:user_id>/limits', methods=['GET', 'POST'])
 @login_required
@@ -101,7 +101,7 @@ def admin_user_limits(user_id):
         except ValueError:
             flash('输入格式错误，请输入有效的数字')
 
-    return render_template('admin/user_limits.html', form=form, user=user)
+    return render_template('admin/user_limits.html', form=form, user=user, config=get_config_dict())
 
 @admin_bp.route('/user/create', methods=['GET', 'POST'])
 @login_required
@@ -134,7 +134,7 @@ def admin_create_user():
             db.session.commit()
             flash(f'用户 "{form.username.data}" 创建成功')
             return redirect(url_for('admin.admin_users'))
-    return render_template('admin/create_user.html', form=form)
+    return render_template('admin/create_user.html', form=form, config=get_config_dict())
 
 @admin_bp.route('/user/<int:user_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -168,7 +168,7 @@ def admin_edit_user(user_id):
         form.username.data = user.username
         form.role.data = user.role
 
-    return render_template('admin/edit_user.html', form=form, user=user)
+    return render_template('admin/edit_user.html', form=form, user=user, config=get_config_dict())
 
 @admin_bp.route('/user/<int:user_id>/delete', methods=['POST'])
 @login_required
@@ -208,7 +208,7 @@ def admin_files():
         return redirect(url_for('main.index'))
 
     files = File.query.all()
-    return render_template('admin/admin_files.html', files=files)
+    return render_template('admin/admin_files.html', files=files, config=get_config_dict())
 
 @admin_bp.route('/file/<file_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -255,7 +255,7 @@ def admin_edit_file(file_id):
         form.allow_edit.data = file.allow_edit
         form.password.data = file.password
 
-    return render_template('admin/edit_file.html', form=form, file=file)
+    return render_template('admin/edit_file.html', form=form, file=file, config=get_config_dict())
 
 @admin_bp.route('/file/<file_id>/delete', methods=['POST'])
 @login_required

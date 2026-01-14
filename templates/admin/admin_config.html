@@ -63,9 +63,11 @@
                         <h5 class="mb-3">界面设置</h5>
                         <div class="mb-3">
                             {{ form.background_image.label(class="form-label") }}
-                            {{ form.background_image(class="form-control") }}
+                            {{ form.background_image(class="form-control", placeholder="/static/bg.jpeg 或 https://example.com/image.jpg") }}
                             <div class="form-text">
-                                设置系统背景图片的URL路径（留空使用默认渐变背景）
+                                设置系统背景图片的URL路径（留空使用默认渐变背景）。<br>
+                                本地文件示例: <code>/static/bg.jpeg</code><br>
+                                网络图片示例: <code>https://example.com/image.jpg</code>
                             </div>
                         </div>
                         <div class="row">

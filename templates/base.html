@@ -6,6 +6,7 @@
     <title>{% block title %}文件分享系统{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -92,6 +93,9 @@
         }
 
         /* 自定义背景图片样式 */
+        .custom-bg {
+            position: relative;
+        }
         .custom-bg::before {
             content: '';
             position: fixed;
@@ -99,12 +103,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.3);
+            background: rgba(0,0,0,0.2);
             z-index: -1;
         }
     </style>
 </head>
-<body class="{% if current_user.is_authenticated and current_user.theme == 'dark' %}dark-theme{% elif not current_user.is_authenticated and config.get('default_theme', 'light') == 'dark' %}dark-theme{% endif %} {% if config.get('background_image', '') %}custom-bg{% endif %}" style="{% if config.get('background_image', '') %}background: url('{{ config.get('background_image', '') }}') no-repeat center center fixed; background-size: cover;{% endif %}">
+<body class="{% if current_user.is_authenticated and current_user.theme == 'dark' %}dark-theme{% elif not current_user.is_authenticated and config.get('default_theme', 'light') == 'dark' %}dark-theme{% endif %}" id="main-body">
     <nav class="navbar navbar-expand-lg navbar-light mb-4">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{{ url_for('main.index') }}">
@@ -120,7 +124,7 @@
                             <div class="dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                                     {% if current_user.avatar_url %}
-                                        <img src="{{ current_user.avatar_url }}" alt="头像" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                                        <img src="{{ current_user.avatar_url }}" alt="头像" class="rounded-circle me-2 avatar-medium">
                                     {% else %}
                                         <i class="fas fa-user-circle me-2"></i>
                                     {% endif %}
@@ -205,6 +209,19 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 动态设置背景图片
+        document.addEventListener('DOMContentLoaded', function() {
+            const body = document.getElementById('main-body');
+            const backgroundImage = '{{ config.get("background_image", "") }}';
+
+            if (backgroundImage && backgroundImage.trim() !== '') {
+                body.style.background = `url('${backgroundImage}') no-repeat center center fixed`;
+                body.style.backgroundSize = 'cover';
+                body.classList.add('custom-bg');
+            }
+        });
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

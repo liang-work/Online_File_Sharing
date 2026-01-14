@@ -36,7 +36,7 @@ def profile():
         form.language.data = current_user.language
         form.theme.data = current_user.theme
 
-    return render_template('profile.html', form=form)
+    return render_template('profile.html', form=form, config=get_config_dict())
 
 @main_bp.route('/toggle_theme')
 @login_required

@@ -24,7 +24,7 @@
                                 <div class="card file-card h-100">
                                     <div class="card-body d-flex flex-column">
                                         <div class="d-flex align-items-center mb-3">
-                                            <i class="fas fa-file text-primary me-3" style="font-size: 2rem;"></i>
+                                            <i class="fas fa-file text-primary me-3 file-icon"></i>
                                             <div class="flex-grow-1">
                                                 <h6 class="card-title mb-1 text-truncate" title="{{ file.original_filename }}">
                                                     <a href="{{ url_for('files.file_details', file_id=file.id) }}" class="text-decoration-none text-dark">
@@ -100,7 +100,7 @@
                     </div>
                 {% else %}
                     <div class="text-center py-5">
-                        <i class="fas fa-folder-open text-muted" style="font-size: 4rem;"></i>
+                        <i class="fas fa-folder-open text-muted empty-icon"></i>
                         <h5 class="mt-3 text-muted">
                             {% if current_user.is_authenticated %}
                                 还没有上传文件

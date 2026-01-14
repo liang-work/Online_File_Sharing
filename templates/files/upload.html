@@ -74,7 +74,7 @@
                         </div>
                     </div>
 
-                    <div class="mb-3" id="allowedUsersGroup" style="display: none;">
+                    <div class="mb-3 hidden" id="allowedUsersGroup">
                         {{ form.allowed_users.label(class="form-label") }}
                         {{ form.allowed_users(class="form-control", rows="3", placeholder="输入用户名，每行一个") }}
                         <div class="form-text">
@@ -87,7 +87,7 @@
                         {{ form.expiry_type(class="form-select") }}
                     </div>
 
-                    <div class="mb-3" id="expiryHoursGroup" style="display: none;">
+                    <div class="mb-3 hidden" id="expiryHoursGroup">
                         {{ form.expiry_hours.label(class="form-label") }}
                         {{ form.expiry_hours(class="form-select") }}
                         <div class="form-text">
@@ -95,7 +95,7 @@
                         </div>
                     </div>
 
-                    <div class="mb-3" id="customExpiryGroup" style="display: none;">
+                    <div class="mb-3 hidden" id="customExpiryGroup">
                         {{ form.custom_expiry.label(class="form-label") }}
                         {{ form.custom_expiry(class="form-control", placeholder="YYYY-MM-DD HH:MM") }}
                         <div class="form-text">
@@ -152,12 +152,12 @@
                     </div>
 
                     <!-- 上传进度 -->
-                    <div id="uploadProgress" class="mt-3" style="display: none;">
+                    <div id="uploadProgress" class="mt-3 hidden">
                         <div class="mb-2">
                             <strong>上传进度</strong>
                         </div>
                         <div class="progress mb-2">
-                            <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            <div id="progressBar" class="progress-bar upload-progress" role="progressbar"></div>
                         </div>
                         <div class="text-muted small">
                             <span id="progressText">准备上传...</span>

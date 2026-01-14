@@ -17,9 +17,9 @@
                     <div class="col-md-6 text-center">
                         <div class="mb-3">
                             {% if current_user.avatar_url %}
-                                <img src="{{ current_user.avatar_url }}" alt="头像" class="rounded-circle mb-3" style="width: 100px; height: 100px; object-fit: cover;">
+                                <img src="{{ current_user.avatar_url }}" alt="头像" class="rounded-circle mb-3 avatar-large">
                             {% else %}
-                                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 100px; height: 100px;">
+                                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3 avatar-default">
                                     <i class="fas fa-user fa-3x text-muted"></i>
                                 </div>
                             {% endif %}
@@ -46,7 +46,7 @@
                         <div class="mb-3">
                             <h6><i class="fas fa-hdd me-2"></i>存储使用情况</h6>
                             <p>{{ "%.2f"|format(current_user.get_total_files_size() / (1024*1024*1024)) }} GB / {{ "%.1f"|format(current_user.max_total_size / (1024*1024*1024)) }} GB</p>
-                            <div class="progress" style="height: 8px;">
+                            <div class="progress progress-thin">
                                 {% set usage_percent = (current_user.get_total_files_size() / current_user.max_total_size * 100) %}
                                 <div class="progress-bar {% if usage_percent < 70 %}bg-success{% elif usage_percent < 90 %}bg-warning{% else %}bg-danger{% endif %}"
                                      style="width: {{ usage_percent }}%"></div>

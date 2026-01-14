@@ -32,9 +32,9 @@
                         </h5>
                         <div class="border rounded p-3 bg-light">
                             {% if preview_type == 'image' %}
-                                <img src="{{ url_for('view_file', file_id=file.id) }}" class="img-fluid rounded" alt="{{ file.original_filename }}" style="max-height: 400px;">
+                                <img src="{{ url_for('view_file', file_id=file.id) }}" class="img-fluid rounded file-preview" alt="{{ file.original_filename }}">
                             {% elif preview_type == 'video' %}
-                                <video controls class="w-100 rounded" style="max-height: 400px;">
+                                <video controls class="w-100 rounded file-preview">
                                     <source src="{{ url_for('view_file', file_id=file.id) }}" type="video/mp4">
                                     您的浏览器不支持视频播放。
                                 </video>
@@ -44,9 +44,9 @@
                                     您的浏览器不支持音频播放。
                                 </audio>
                             {% elif preview_type == 'pdf' %}
-                                <iframe src="{{ url_for('view_file', file_id=file.id) }}" class="w-100 rounded" style="height: 400px;" frameborder="0"></iframe>
+                                <iframe src="{{ url_for('view_file', file_id=file.id) }}" class="w-100 rounded file-preview-iframe" frameborder="0"></iframe>
                             {% elif preview_type == 'text' %}
-                                <pre class="bg-white p-3 rounded border" style="max-height: 400px; overflow-y: auto;">
+                                <pre class="bg-white p-3 rounded border file-preview-text">
                                     <!-- 这里可以添加文本内容预览 -->
                                     <code>文件内容预览功能</code>
                                 </pre>
@@ -88,7 +88,7 @@
                                 <td class="fw-bold">上传者：</td>
                                 <td>
                                     {% if file.user.avatar_url %}
-                                        <img src="{{ file.user.avatar_url }}" alt="头像" class="rounded-circle me-2" style="width: 24px; height: 24px; object-fit: cover;">
+                                        <img src="{{ file.user.avatar_url }}" alt="头像" class="rounded-circle me-2 avatar-small">
                                     {% endif %}
                                     {{ file.user.nickname or file.user.username }}
                                     {% if file.user.role == 'admin' %}

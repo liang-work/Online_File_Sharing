@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, login_required, logout_user, current_user
 from models import User, db
 from forms import LoginForm, RegisterForm
-from utils import is_registration_allowed, get_config_value
+from utils import is_registration_allowed, get_config_value, get_config_dict
 from datetime import datetime, timedelta
 
 auth_bp = Blueprint('auth', __name__)
@@ -18,7 +18,7 @@ def login():
             login_user(user)
             return redirect(url_for('main.index'))
         flash('用户名或密码错误')
-    return render_template('auth/login.html', form=form)
+    return render_template('auth/login.html', form=form, config=get_config_dict())
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -60,7 +60,7 @@ def register():
             db.session.commit()
             flash('注册成功，请登录')
             return redirect(url_for('auth.login'))
-    return render_template('auth/register.html', form=form)
+    return render_template('auth/register.html', form=form, config=get_config_dict())
 
 @auth_bp.route('/logout')
 @login_required

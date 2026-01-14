@@ -87,7 +87,7 @@ def upload():
         db.session.commit()
         flash('文件上传成功')
         return redirect(url_for('main.index'))
-    return render_template('files/upload.html', form=form)
+    return render_template('files/upload.html', form=form, config=get_config_dict())
 
 @files_bp.route('/file/<file_id>')
 def view_file(file_id):
@@ -152,7 +152,7 @@ def share_file(file_id):
                 expiry_time = datetime.strptime(form.custom_expiry.data, '%Y-%m-%d %H:%M')
             except ValueError:
                 flash('自定义过期时间格式错误')
-                return render_template('files/share.html', form=form, file=file)
+                return render_template('files/share.html', form=form, file=file, config=get_config_dict())
 
         # 处理允许用户列表
         allowed_users_json = None
@@ -203,7 +203,7 @@ def share_file(file_id):
         except:
             pass
 
-    return render_template('files/share.html', form=form, file=file)
+    return render_template('files/share.html', form=form, file=file, config=get_config_dict())
 
 @files_bp.route('/file/<file_id>/details')
 def file_details(file_id):
@@ -273,4 +273,4 @@ def file_details(file_id):
 
     return render_template('files/file_details.html', file=file, file_size=file_size,
                          can_preview=can_preview, preview_type=preview_type,
-                         current_time=datetime.utcnow())
+                         current_time=datetime.utcnow(), config=get_config_dict())
