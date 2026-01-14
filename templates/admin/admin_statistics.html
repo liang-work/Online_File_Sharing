@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}系统统计 - 文件分享系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>系统统计
+                </h4>
+                <div>
+                    <a href="{{ url_for('admin.admin_users') }}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-users me-1"></i>用户管理
+                    </a>
+                    <a href="{{ url_for('admin.admin_files') }}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-file-alt me-1"></i>文件管理
+                    </a>
+                    <a href="{{ url_for('admin.admin_config') }}" class="btn btn-outline-info">
+                        <i class="fas fa-cogs me-1"></i>系统配置
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- 用户统计 -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="mb-3">
+                            <i class="fas fa-users me-2"></i>用户统计
+                        </h5>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h3 class="card-title">{{ total_users }}</h3>
+                                <p class="card-text">总用户数</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h3 class="card-title">{{ regular_users }}</h3>
+                                <p class="card-text">普通用户</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body text-center">
+                                <h3 class="card-title">{{ admin_users }}</h3>
+                                <p class="card-text">管理员</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h3 class="card-title">{{ new_users_30d }}</h3>
+                                <p class="card-text">最近30天新用户</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 文件统计 -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="mb-3">
+                            <i class="fas fa-file-alt me-2"></i>文件统计
+                        </h5>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card bg-secondary text-white">
+                            <div class="card-body text-center">
+                                <h3 class="card-title">{{ total_files }}</h3>
+                                <p class="card-text">总文件数</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body text-center">
+                                <h3 class="card-title">{{ total_size_gb }} GB</h3>
+                                <p class="card-text">总存储空间</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-dark text-white">
+                            <div class="card-body text-center">
+                                <h3 class="card-title">{{ recent_files }}</h3>
+                                <p class="card-text">最近7天上传</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分享类型统计 -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="mb-3">
+                            <i class="fas fa-share-alt me-2"></i>分享类型分布
+                        </h5>
+                    </div>
+                </div>
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h3 class="card-title">{{ share_types.public }}</h3>
+                                <p class="card-text">公开分享</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h3 class="card-title">{{ share_types.link_only }}</h3>
+                                <p class="card-text">链接分享</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body text-center">
+                                <h3 class="card-title">{{ share_types.specified_users }}</h3>
+                                <p class="card-text">指定用户</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 文件类型统计 -->
+                {% if file_types %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="mb-3">
+                            <i class="fas fa-file me-2"></i>文件类型分布
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>文件类型</th>
+                                        <th>数量</th>
+                                        <th>占比</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ext, count in file_types.items() %}
+                                    <tr>
+                                        <td>
+                                            <code>{{ ext }}</code>
+                                            {% if ext == '.jpg' or ext == '.jpeg' %}
+                                                <small class="text-muted">(图片)</small>
+                                            {% elif ext == '.png' %}
+                                                <small class="text-muted">(图片)</small>
+                                            {% elif ext == '.gif' %}
+                                                <small class="text-muted">(图片)</small>
+                                            {% elif ext == '.pdf' %}
+                                                <small class="text-muted">(文档)</small>
+                                            {% elif ext == '.txt' %}
+                                                <small class="text-muted">(文本)</small>
+                                            {% elif ext == '.zip' %}
+                                                <small class="text-muted">(压缩包)</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ count }}</td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar" role="progressbar"
+                                                     style="width: {{ (count / total_files * 100)|round(1) }}%">
+                                                    {{ "%.1f"|format(count / total_files * 100) }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- 系统信息 -->
+                <div class="row">
+                    <div class="col-12">
+                        <h5 class="mb-3">
+                            <i class="fas fa-server me-2"></i>系统信息
+                        </h5>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>系统版本：</strong>文件分享系统 v1.0</p>
+                                        <p><strong>数据库：</strong>SQLite</p>
+                                        <p><strong>文件存储：</strong>本地文件系统</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>总用户数：</strong>{{ total_users }}</p>
+                                        <p><strong>总文件数：</strong>{{ total_files }}</p>
+                                        <p><strong>总存储量：</strong>{{ total_size_gb }} GB</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

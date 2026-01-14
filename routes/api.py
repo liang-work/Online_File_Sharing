@@ -7,6 +7,7 @@ import os
 import shutil
 import uuid
 
+# API蓝图
 api_bp = Blueprint('api', __name__)
 
 @api_bp.route('/files/upload/create', methods=['POST'])
@@ -128,7 +129,7 @@ def upload_chunk(task_id, chunk_index):
     # 检查分块是否已上传
     existing_chunk = UploadChunk.query.filter_by(task_id=task_id, chunk_index=chunk_index).first()
     if existing_chunk:
-        return jsonify({'error': '分块已上传'}), 400
+        return '', 200  # 分块已存在，直接返回成功
 
     # 获取上传的分块数据
     if 'chunk' not in request.files:
@@ -144,7 +145,9 @@ def upload_chunk(task_id, chunk_index):
         return jsonify({'error': f'分块大小不正确，期望 {expected_size} 字节，实际 {chunk_size} 字节'}), 400
 
     # 创建临时目录存储分块
-    temp_dir = os.path.join('uploads', 'temp', task_id)
+    from flask import current_app
+    upload_dir = current_app.config['UPLOAD_FOLDER']
+    temp_dir = os.path.join(upload_dir, 'temp', task_id)
     os.makedirs(temp_dir, exist_ok=True)
 
     # 保存分块
@@ -180,14 +183,21 @@ def complete_upload(task_id):
         return jsonify({'error': f'分块不完整，已上传 {uploaded_chunks}/{task.chunks_count}'}), 400
 
     # 合并分块
-    temp_dir = os.path.join('uploads', 'temp', task_id)
+    from flask import current_app
+    upload_dir = current_app.config['UPLOAD_FOLDER']
+    temp_dir = os.path.join(upload_dir, 'temp', task_id)
     final_filename = str(uuid.uuid4()) + '_' + secure_filename(task.file_name)
-    final_path = os.path.join('uploads', final_filename)
+    final_path = os.path.join(upload_dir, final_filename)
 
     try:
+        # 确保uploads目录存在
+        os.makedirs(upload_dir, exist_ok=True)
+
         with open(final_path, 'wb') as final_file:
             for i in range(task.chunks_count):
                 chunk_path = os.path.join(temp_dir, f'chunk_{i:06d}')
+                if not os.path.exists(chunk_path):
+                    raise Exception(f'分块文件不存在: {chunk_path}')
                 with open(chunk_path, 'rb') as chunk_file:
                     final_file.write(chunk_file.read())
 

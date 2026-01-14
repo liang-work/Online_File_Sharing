@@ -11,8 +11,13 @@
                     <i class="fas fa-file me-2"></i>{{ file.original_filename }}
                 </h4>
                 <div>
+                    {% if file.share_type == 'public' or file.share_type == 'link_only' %}
+                        <button type="button" class="btn btn-success btn-sm me-2" onclick="copyShareLink()">
+                            <i class="fas fa-copy me-1"></i>复制链接
+                        </button>
+                    {% endif %}
                     {% if file.allow_download %}
-                        <a href="{{ url_for('view_file', file_id=file.id) }}" class="btn btn-primary btn-sm">
+                        <a href="{{ url_for('view_file', file_id=file.id) }}" class="btn btn-primary btn-sm me-2">
                             <i class="fas fa-download me-1"></i>下载
                         </a>
                     {% endif %}
@@ -243,4 +248,29 @@
         </div>
     </div>
 </div>
+{% block scripts %}
+<script>
+function copyShareLink() {
+    const shareLink = '{{ url_for("files.file_details", file_id=file.id, _external=True) }}';
+
+    navigator.clipboard.writeText(shareLink).then(function() {
+        // 显示复制成功提示
+        const button = event.target.closest('button');
+        const originalHTML = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check me-1"></i>已复制';
+        button.classList.remove('btn-success');
+        button.classList.add('btn-primary');
+
+        setTimeout(function() {
+            button.innerHTML = originalHTML;
+            button.classList.remove('btn-primary');
+            button.classList.add('btn-success');
+        }, 2000);
+    }).catch(function(err) {
+        console.error('复制失败:', err);
+        alert('复制失败，请手动复制链接');
+    });
+}
+</script>
+{% endblock %}
 {% endblock %}

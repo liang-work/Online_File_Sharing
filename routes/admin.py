@@ -257,6 +257,69 @@ def admin_edit_file(file_id):
 
     return render_template('admin/edit_file.html', form=form, file=file, config=get_config_dict())
 
+@admin_bp.route('/statistics')
+@login_required
+def admin_statistics():
+    if current_user.role != 'admin':
+        flash('无权访问此页面')
+        return redirect(url_for('main.index'))
+
+    # 获取统计数据
+    from models import User, File
+    from datetime import datetime, timedelta
+
+    # 用户统计
+    total_users = User.query.count()
+    admin_users = User.query.filter_by(role='admin').count()
+    regular_users = total_users - admin_users
+
+    # 新用户统计（最近30天）
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    new_users_30d = User.query.filter(User.created_at >= thirty_days_ago).count()
+
+    # 文件统计
+    total_files = File.query.count()
+    total_file_size = 0
+    for file in File.query.all():
+        try:
+            if os.path.exists(file.filepath):
+                total_file_size += os.path.getsize(file.filepath)
+        except:
+            pass
+
+    # 文件类型统计
+    file_types = {}
+    for file in File.query.all():
+        ext = os.path.splitext(file.original_filename.lower())[1]
+        if ext:
+            file_types[ext] = file_types.get(ext, 0) + 1
+
+    # 分享类型统计
+    share_types = {
+        'public': File.query.filter_by(share_type='public').count(),
+        'link_only': File.query.filter_by(share_type='link_only').count(),
+        'specified_users': File.query.filter_by(share_type='specified_users').count()
+    }
+
+    # 最近文件上传统计（最近7天）
+    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+    recent_files = File.query.filter(File.upload_time >= seven_days_ago).count()
+
+    # 存储空间使用统计（GB）
+    total_size_gb = total_file_size / (1024 * 1024 * 1024)
+
+    return render_template('admin/admin_statistics.html',
+                         total_users=total_users,
+                         admin_users=admin_users,
+                         regular_users=regular_users,
+                         new_users_30d=new_users_30d,
+                         total_files=total_files,
+                         total_size_gb=round(total_size_gb, 2),
+                         file_types=file_types,
+                         share_types=share_types,
+                         recent_files=recent_files,
+                         config=get_config_dict())
+
 @admin_bp.route('/file/<file_id>/delete', methods=['POST'])
 @login_required
 def admin_delete_file(file_id):

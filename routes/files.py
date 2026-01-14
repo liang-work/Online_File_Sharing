@@ -22,6 +22,9 @@ def upload():
         current_files_count = current_user.get_total_files_count()
         current_total_size = current_user.get_total_files_size()
 
+        uploaded_files = []
+        skipped_files = []
+
         for file in files:
             if file and file.filename:
                 # 检查单文件大小限制
@@ -30,17 +33,17 @@ def upload():
                 file.seek(0)
 
                 if file_size > current_user.max_file_size:
-                    flash(f'文件 "{file.filename}" 超过单文件大小限制 ({current_user.max_file_size // (1024*1024)}MB)')
+                    skipped_files.append(f'文件 "{file.filename}" 超过单文件大小限制 ({current_user.max_file_size // (1024*1024)}MB)')
                     continue
 
                 # 检查总文件数量限制
                 if current_files_count >= current_user.max_total_files:
-                    flash('已达到总文件数量限制，无法上传更多文件')
+                    skipped_files.append('已达到总文件数量限制，无法上传更多文件')
                     break
 
                 # 检查总文件大小限制
                 if current_total_size + file_size > current_user.max_total_size:
-                    flash('上传后将超过总文件大小限制，无法上传')
+                    skipped_files.append('上传后将超过总文件大小限制，无法上传')
                     break
 
                 filename = secure_filename(file.filename)
@@ -56,7 +59,7 @@ def upload():
                     try:
                         expiry_time = datetime.strptime(form.custom_expiry.data, '%Y-%m-%d %H:%M')
                     except ValueError:
-                        flash(f'文件 "{file.filename}" 的自定义过期时间格式错误')
+                        skipped_files.append(f'文件 "{file.filename}" 的自定义过期时间格式错误')
                         continue
 
                 # 处理允许用户列表
@@ -80,12 +83,23 @@ def upload():
                     allowed_users=allowed_users_json
                 )
                 db.session.add(new_file)
+                uploaded_files.append(filename)
 
                 current_files_count += 1
                 current_total_size += file_size
 
-        db.session.commit()
-        flash('文件上传成功')
+        # 一次性提交所有文件
+        try:
+            db.session.commit()
+            if uploaded_files:
+                flash(f'成功上传 {len(uploaded_files)} 个文件')
+            if skipped_files:
+                for msg in skipped_files:
+                    flash(msg)
+        except Exception as e:
+            db.session.rollback()
+            flash(f'上传失败: {str(e)}')
+
         return redirect(url_for('main.index'))
     return render_template('files/upload.html', form=form, config=get_config_dict())
 
