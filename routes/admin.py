@@ -207,7 +207,13 @@ def admin_files():
         flash('无权访问此页面')
         return redirect(url_for('main.index'))
 
-    files = File.query.all()
+    try:
+        files = File.query.all()
+        if files is None:
+            files = []
+    except Exception as e:
+        files = []
+
     return render_template('admin/admin_files.html', files=files, config=get_config_dict())
 
 @admin_bp.route('/file/<file_id>/edit', methods=['GET', 'POST'])
@@ -255,7 +261,7 @@ def admin_edit_file(file_id):
         form.allow_edit.data = file.allow_edit
         form.password.data = file.password
 
-    return render_template('admin/edit_file.html', form=form, file=file, config=get_config_dict())
+    return render_template('admin/admin_edit_file.html', form=form, file=file, config=get_config_dict())
 
 @admin_bp.route('/statistics')
 @login_required
@@ -340,4 +346,36 @@ def admin_delete_file(file_id):
     db.session.commit()
 
     flash(f'文件 "{file.original_filename}" 已删除')
+    return redirect(url_for('admin.admin_files'))
+
+@admin_bp.route('/files/batch-delete', methods=['POST'])
+@login_required
+def admin_batch_delete_files():
+    if current_user.role != 'admin':
+        flash('无权访问此页面')
+        return redirect(url_for('main.index'))
+
+    file_ids = request.form.getlist('file_ids')
+    if not file_ids:
+        flash('未选择任何文件')
+        return redirect(url_for('admin.admin_files'))
+
+    deleted_count = 0
+    for file_id in file_ids:
+        try:
+            file = File.query.get(file_id)
+            if file:
+                # 删除文件
+                try:
+                    os.remove(file.filepath)
+                except:
+                    pass
+                # 删除数据库记录
+                db.session.delete(file)
+                deleted_count += 1
+        except:
+            continue
+
+    db.session.commit()
+    flash(f'成功删除 {deleted_count} 个文件')
     return redirect(url_for('admin.admin_files'))

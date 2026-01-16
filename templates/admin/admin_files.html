@@ -16,10 +16,31 @@
             </div>
             <div class="card-body">
                 {% if files %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="selectAllFiles()">
+                                    <i class="fas fa-check-square me-1"></i>全选
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="deselectAllFiles()">
+                                    <i class="fas fa-square me-1"></i>取消全选
+                                </button>
+                                <span id="selectedCount" class="text-muted">已选择 0 个文件</span>
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="batchDeleteFiles()" id="batchDeleteBtn" style="display: none;">
+                                    <i class="fas fa-trash me-1"></i>批量删除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
                                 <tr>
+                                    <th width="40">
+                                        <input type="checkbox" id="selectAll" onchange="toggleAllSelection()">
+                                    </th>
                                     <th>ID</th>
                                     <th>文件名</th>
                                     <th>上传者</th>
@@ -33,14 +54,15 @@
                             <tbody>
                                 {% for file in files %}
                                     <tr>
+                                        <td>
+                                            <input type="checkbox" class="file-checkbox" value="{{ file.id }}" onchange="updateSelectionCount()">
+                                        </td>
                                         <td>{{ file.id }}</td>
                                         <td>
-                                            <strong title="{{ file.original_filename }}">{{ file.original_filename[:25] }}{% if file.original_filename|length > 25 %}...{% endif %}</strong>
+                                            <strong title="{{ file.raw_filename or file.original_filename|e }}">{{ ((file.raw_filename or file.original_filename)|e)[:25] }}{% if (file.raw_filename or file.original_filename)|length > 25 %}...{% endif %}</strong>
                                         </td>
                                         <td>{{ file.user.username }}</td>
-                                        <td>
-                                            未知
-                                        </td>
+                                        <td>未知</td>
                                         <td>
                                             {% if file.share_type == 'public' %}
                                                 <span class="badge bg-success">公开</span>
@@ -112,7 +134,7 @@
                 <div class="row text-center">
                     <div class="col-md-3">
                         <div class="border rounded p-3">
-                            <h3 class="text-primary">{{ files|length }}</h3>
+                            <h3 class="text-primary">{{ files|length if files else 0 }}</h3>
                             <p class="mb-0">总文件数</p>
                         </div>
                     </div>
@@ -120,11 +142,13 @@
                         <div class="border rounded p-3">
                             <h3 class="text-success">
                                 {% set public_count = 0 %}
-                                {% for file in files %}
-                                    {% if file.share_type == 'public' %}
-                                        {% set public_count = public_count + 1 %}
-                                    {% endif %}
-                                {% endfor %}
+                                {% if files %}
+                                    {% for file in files %}
+                                        {% if file.share_type == 'public' %}
+                                            {% set public_count = public_count + 1 %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                                 {{ public_count }}
                             </h3>
                             <p class="mb-0">公开文件</p>
@@ -134,11 +158,13 @@
                         <div class="border rounded p-3">
                             <h3 class="text-info">
                                 {% set link_count = 0 %}
-                                {% for file in files %}
-                                    {% if file.share_type == 'link_only' %}
-                                        {% set link_count = link_count + 1 %}
-                                    {% endif %}
-                                {% endfor %}
+                                {% if files %}
+                                    {% for file in files %}
+                                        {% if file.share_type == 'link_only' %}
+                                            {% set link_count = link_count + 1 %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                                 {{ link_count }}
                             </h3>
                             <p class="mb-0">链接分享文件</p>
@@ -148,11 +174,13 @@
                         <div class="border rounded p-3">
                             <h3 class="text-warning">
                                 {% set private_count = 0 %}
-                                {% for file in files %}
-                                    {% if file.share_type == 'specified_users' %}
-                                        {% set private_count = private_count + 1 %}
-                                    {% endif %}
-                                {% endfor %}
+                                {% if files %}
+                                    {% for file in files %}
+                                        {% if file.share_type == 'specified_users' %}
+                                            {% set private_count = private_count + 1 %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                                 {{ private_count }}
                             </h3>
                             <p class="mb-0">指定用户文件</p>
@@ -163,4 +191,81 @@
         </div>
     </div>
 </div>
+
+{% block scripts %}
+<script>
+function selectAllFiles() {
+    const checkboxes = document.querySelectorAll('.file-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+    updateSelectionCount();
+}
+
+function deselectAllFiles() {
+    const checkboxes = document.querySelectorAll('.file-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+    updateSelectionCount();
+}
+
+function toggleAllSelection() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.file-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = selectAllCheckbox.checked);
+    updateSelectionCount();
+}
+
+function updateSelectionCount() {
+    const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+    const count = checkboxes.length;
+    document.getElementById('selectedCount').textContent = `已选择 ${count} 个文件`;
+
+    const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+    if (count > 0) {
+        batchDeleteBtn.style.display = 'inline-block';
+    } else {
+        batchDeleteBtn.style.display = 'none';
+    }
+
+    // 更新全选复选框状态
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const allCheckboxes = document.querySelectorAll('.file-checkbox');
+    const checkedCount = document.querySelectorAll('.file-checkbox:checked').length;
+    selectAllCheckbox.checked = checkedCount === allCheckboxes.length && allCheckboxes.length > 0;
+    selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < allCheckboxes.length;
+}
+
+function batchDeleteFiles() {
+    const selectedFiles = document.querySelectorAll('.file-checkbox:checked');
+    if (selectedFiles.length === 0) {
+        alert('请先选择要删除的文件');
+        return;
+    }
+
+    const fileIds = Array.from(selectedFiles).map(cb => cb.value);
+    const confirmMessage = `确定要删除选中的 ${fileIds.length} 个文件吗？此操作不可撤销！`;
+
+    if (confirm(confirmMessage)) {
+        // 创建表单并提交
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/files/batch-delete';
+
+        fileIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'file_ids';
+            input.value = id;
+            form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// 初始化
+document.addEventListener('DOMContentLoaded', function() {
+    updateSelectionCount();
+});
+</script>
+{% endblock %}
 {% endblock %}

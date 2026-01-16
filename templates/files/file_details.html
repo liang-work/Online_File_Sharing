@@ -8,7 +8,7 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">
-                    <i class="fas fa-file me-2"></i>{{ file.original_filename }}
+                    <i class="fas fa-file me-2"></i>{{ file.raw_filename|e }}
                 </h4>
                 <div>
                     {% if file.share_type == 'public' or file.share_type == 'link_only' %}
@@ -17,12 +17,12 @@
                         </button>
                     {% endif %}
                     {% if file.allow_download %}
-                        <a href="{{ url_for('view_file', file_id=file.id) }}" class="btn btn-primary btn-sm me-2">
+                        <a href="{{ url_for('files.view_file', file_id=file.id) }}" class="btn btn-primary btn-sm me-2">
                             <i class="fas fa-download me-1"></i>下载
                         </a>
                     {% endif %}
                     {% if current_user.is_authenticated and (current_user.id == file.user_id or current_user.role == 'admin') %}
-                        <a href="{{ url_for('share_file', file_id=file.id) }}" class="btn btn-outline-secondary btn-sm">
+                        <a href="{{ url_for('files.share_file', file_id=file.id) }}" class="btn btn-outline-secondary btn-sm">
                             <i class="fas fa-share me-1"></i>分享设置
                         </a>
                     {% endif %}
@@ -37,23 +37,22 @@
                         </h5>
                         <div class="border rounded p-3 bg-light">
                             {% if preview_type == 'image' %}
-                                <img src="{{ url_for('view_file', file_id=file.id) }}" class="img-fluid rounded file-preview" alt="{{ file.original_filename }}">
+                                <img src="{{ url_for('files.preview_file', file_id=file.id) }}" class="img-fluid rounded file-preview" alt="{{ file.original_filename }}">
                             {% elif preview_type == 'video' %}
                                 <video controls class="w-100 rounded file-preview">
-                                    <source src="{{ url_for('view_file', file_id=file.id) }}" type="video/mp4">
+                                    <source src="{{ url_for('files.preview_file', file_id=file.id) }}" type="video/mp4">
                                     您的浏览器不支持视频播放。
                                 </video>
                             {% elif preview_type == 'audio' %}
                                 <audio controls class="w-100">
-                                    <source src="{{ url_for('view_file', file_id=file.id) }}" type="audio/mpeg">
+                                    <source src="{{ url_for('files.preview_file', file_id=file.id) }}" type="audio/mpeg">
                                     您的浏览器不支持音频播放。
                                 </audio>
                             {% elif preview_type == 'pdf' %}
-                                <iframe src="{{ url_for('view_file', file_id=file.id) }}" class="w-100 rounded file-preview-iframe" frameborder="0"></iframe>
+                                <iframe src="{{ url_for('files.preview_file', file_id=file.id) }}" class="w-100 rounded file-preview-iframe" frameborder="0"></iframe>
                             {% elif preview_type == 'text' %}
                                 <pre class="bg-white p-3 rounded border file-preview-text">
-                                    <!-- 这里可以添加文本内容预览 -->
-                                    <code>文件内容预览功能</code>
+                                    <code>{{ preview_content|e }}</code>
                                 </pre>
                             {% endif %}
                         </div>
@@ -69,7 +68,7 @@
                         <table class="table table-sm">
                             <tr>
                                 <td class="fw-bold">文件名：</td>
-                                <td>{{ file.original_filename }}</td>
+                                <td>{{ file.raw_filename|e }}</td>
                             </tr>
                             <tr>
                                 <td class="fw-bold">文件大小：</td>
@@ -230,9 +229,9 @@
                             <i class="fas fa-users me-2"></i>允许访问的用户
                         </h5>
                         <div class="border rounded p-3 bg-light">
-                            {% set allowed_list = file.allowed_users %}
-                            {% if allowed_list %}
-                                {% for user in allowed_list %}
+                            {% set allowed_users_list = file.allowed_users | fromjson %}
+                            {% if allowed_users_list %}
+                                {% for user in allowed_users_list %}
                                     <span class="badge bg-info me-1">{{ user }}</span>
                                 {% endfor %}
                             {% endif %}
@@ -253,23 +252,40 @@
 function copyShareLink() {
     const shareLink = '{{ url_for("files.file_details", file_id=file.id, _external=True) }}';
 
-    navigator.clipboard.writeText(shareLink).then(function() {
-        // 显示复制成功提示
-        const button = event.target.closest('button');
-        const originalHTML = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check me-1"></i>已复制';
-        button.classList.remove('btn-success');
-        button.classList.add('btn-primary');
+    // 直接复制到剪切板
+    const textArea = document.createElement("textarea");
+    textArea.value = shareLink;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
 
-        setTimeout(function() {
-            button.innerHTML = originalHTML;
-            button.classList.remove('btn-primary');
-            button.classList.add('btn-success');
-        }, 2000);
-    }).catch(function(err) {
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            // 显示成功提示
+            const button = event.target.closest('button');
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check me-1"></i>已复制';
+            button.classList.remove('btn-success');
+            button.classList.add('btn-primary');
+
+            setTimeout(function() {
+                button.innerHTML = originalHTML;
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-success');
+            }, 2000);
+        } else {
+            alert('复制失败，请手动复制链接: ' + shareLink);
+        }
+    } catch (err) {
         console.error('复制失败:', err);
-        alert('复制失败，请手动复制链接');
-    });
+        alert('复制失败，请手动复制链接: ' + shareLink);
+    }
+
+    document.body.removeChild(textArea);
 }
 </script>
 {% endblock %}

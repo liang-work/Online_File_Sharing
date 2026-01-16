@@ -52,6 +52,7 @@ class File(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     filename = db.Column(db.String(255), nullable=False)
     original_filename = db.Column(db.String(255), nullable=False)
+    raw_filename = db.Column(db.String(255), nullable=False)  # 完全原始的文件名
     filepath = db.Column(db.String(500), nullable=False)
     upload_time = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -85,6 +86,7 @@ class UploadTask(db.Model):
     bundle_id = db.Column(db.String(36))  # 可选的捆绑ID
     encrypt_password = db.Column(db.String(150))  # 加密密码
     expired_at = db.Column(db.DateTime)  # 过期时间
+    share_options = db.Column(db.Text)  # JSON格式的分享选项
     status = db.Column(db.String(20), default='uploading')  # uploading, completed, failed
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

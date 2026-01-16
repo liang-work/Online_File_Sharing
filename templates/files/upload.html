@@ -12,26 +12,16 @@
                 </h4>
             </div>
             <div class="card-body">
-                <!-- 上传模式提示 -->
-                <div class="mb-3">
-                    <div class="alert alert-info" role="alert">
-                        <i class="fas fa-info-circle me-2"></i>
-                        系统会根据文件大小自动选择最合适的上传方式：<br>
-                        • 小文件（≤10MB）：普通上传<br>
-                        • 大文件（>10MB）：分块上传（支持断点续传）
-                    </div>
-                </div>
-
-                <!-- 普通上传表单 -->
-                <div id="normalUploadForm">
+                <!-- 智能上传表单 -->
+                <div id="uploadForm">
                     <form method="POST" enctype="multipart/form-data">
                         {{ form.hidden_tag() }}
                         <div class="mb-3">
                             {{ form.files.label(class="form-label") }}
                             <input type="file" name="files" class="form-control" multiple required>
-                            <div class="form-text">
-                                支持选择多个文件或整个目录
-                            </div>
+                        <div class="form-text">
+                            支持选择多个文件，系统会自动排序并依次上传。小于50MB的文件直接上传，大于50MB的文件使用分块上传
+                        </div>
                             {% if form.files.errors %}
                                 <div class="text-danger small">
                                     {% for error in form.files.errors %}{{ error }}{% endfor %}
@@ -39,140 +29,120 @@
                             {% endif %}
                         </div>
 
-                    <div class="mb-3">
-                        {{ form.share_type.label(class="form-label") }}
-                        {{ form.share_type(class="form-select") }}
-                        <div class="form-text">
-                            选择文件的分享方式
+                        <div class="mb-3">
+                            {{ form.share_type.label(class="form-label") }}
+                            {{ form.share_type(class="form-select") }}
+                            <div class="form-text">
+                                选择文件的分享方式
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">权限设置</label>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-check">
-                                    {{ form.allow_view(class="form-check-input") }}
-                                    {{ form.allow_view.label(class="form-check-label") }}
+                        <div class="mb-3">
+                            <label class="form-label">权限设置</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        {{ form.allow_view(class="form-check-input") }}
+                                        {{ form.allow_view.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        {{ form.allow_download(class="form-check-input") }}
+                                        {{ form.allow_download.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        {{ form.allow_edit(class="form-check-input") }}
+                                        {{ form.allow_edit.label(class="form-check-label") }}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="form-check">
-                                    {{ form.allow_download(class="form-check-input") }}
-                                    {{ form.allow_download.label(class="form-check-label") }}
+                            <div class="form-text">
+                                设置其他用户对文件的操作权限
+                            </div>
+                        </div>
+
+                        <div class="mb-3 hidden" id="allowedUsersGroup">
+                            {{ form.allowed_users.label(class="form-label") }}
+                            {{ form.allowed_users(class="form-control", rows="3", placeholder="输入用户名，每行一个") }}
+                            <div class="form-text">
+                                只有列出的用户才能访问此文件
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.expiry_type.label(class="form-label") }}
+                            {{ form.expiry_type(class="form-select") }}
+                        </div>
+
+                        <div class="mb-3 hidden" id="expiryHoursGroup">
+                            {{ form.expiry_hours.label(class="form-label") }}
+                            {{ form.expiry_hours(class="form-select") }}
+                            <div class="form-text">
+                                选择预设的过期时间
+                            </div>
+                        </div>
+
+                        <div class="mb-3 hidden" id="customExpiryGroup">
+                            {{ form.custom_expiry.label(class="form-label") }}
+                            {{ form.custom_expiry(class="form-control", placeholder="YYYY-MM-DD HH:MM") }}
+                            <div class="form-text">
+                                自定义过期时间，格式：年-月-日 时:分
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.password.label(class="form-label") }}
+                            {{ form.password(class="form-control") }}
+                            <div class="form-text">
+                                可选：设置访问密码（留空则不设置密码）
+                            </div>
+                            {% if form.password.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.password.errors %}{{ error }}{% endfor %}
                                 </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check">
-                                    {{ form.allow_edit(class="form-check-input") }}
-                                    {{ form.allow_edit.label(class="form-check-label") }}
-                                </div>
-                            </div>
+                            {% endif %}
                         </div>
-                        <div class="form-text">
-                            设置其他用户对文件的操作权限
+
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary btn-lg", id="uploadButton") }}
                         </div>
-                    </div>
-
-                    <div class="mb-3 hidden" id="allowedUsersGroup">
-                        {{ form.allowed_users.label(class="form-label") }}
-                        {{ form.allowed_users(class="form-control", rows="3", placeholder="输入用户名，每行一个") }}
-                        <div class="form-text">
-                            只有列出的用户才能访问此文件
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        {{ form.expiry_type.label(class="form-label") }}
-                        {{ form.expiry_type(class="form-select") }}
-                    </div>
-
-                    <div class="mb-3 hidden" id="expiryHoursGroup">
-                        {{ form.expiry_hours.label(class="form-label") }}
-                        {{ form.expiry_hours(class="form-select") }}
-                        <div class="form-text">
-                            选择预设的过期时间
-                        </div>
-                    </div>
-
-                    <div class="mb-3 hidden" id="customExpiryGroup">
-                        {{ form.custom_expiry.label(class="form-label") }}
-                        {{ form.custom_expiry(class="form-control", placeholder="YYYY-MM-DD HH:MM") }}
-                        <div class="form-text">
-                            自定义过期时间，格式：年-月-日 时:分
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        {{ form.password.label(class="form-label") }}
-                        {{ form.password(class="form-control") }}
-                        <div class="form-text">
-                            可选：设置访问密码（留空则不设置密码）
-                        </div>
-                        {% if form.password.errors %}
-                            <div class="text-danger small">
-                                {% for error in form.password.errors %}{{ error }}{% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="d-grid">
-                        {{ form.submit(class="btn btn-primary btn-lg") }}
-                    </div>
-                </form>
+                    </form>
                 </div>
 
-                <!-- 分块上传界面 -->
-                <div id="chunkUploadForm" style="display: none;">
-                    <div class="mb-3">
-                        <label class="form-label">选择文件</label>
-                        <input type="file" id="chunkFileInput" class="form-control" accept="*/*">
-                        <div class="form-text">
-                            选择要分块上传的文件（支持大文件）
-                        </div>
+                <!-- 上传队列显示 -->
+                <div id="uploadQueue" class="mt-3 hidden">
+                    <h6 class="mb-3">
+                        <i class="fas fa-list me-2"></i>上传队列
+                    </h6>
+                    <div id="queueList" class="list-group">
+                        <!-- 队列项目会动态添加 -->
                     </div>
+                </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">分块大小</label>
-                        <select id="chunkSize" class="form-select">
-                            <option value="1048576">1MB</option>
-                            <option value="5242880" selected>5MB</option>
-                            <option value="10485760">10MB</option>
-                            <option value="20971520">20MB</option>
-                        </select>
-                        <div class="form-text">
-                            选择文件分块的大小
-                        </div>
+                <!-- 上传进度显示 -->
+                <div id="uploadProgress" class="mt-3 hidden">
+                    <div class="mb-2">
+                        <strong>上传进度</strong>
                     </div>
-
-                    <div class="d-grid">
-                        <button type="button" id="startChunkUpload" class="btn btn-success btn-lg" disabled>
-                            <i class="fas fa-play me-2"></i>开始分块上传
+                    <div class="progress mb-2">
+                        <div id="progressBar" class="progress-bar upload-progress" role="progressbar"></div>
+                    </div>
+                    <div class="text-muted small">
+                        <span id="progressText">准备上传...</span>
+                    </div>
+                    <div class="mt-2">
+                        <button type="button" id="pauseUpload" class="btn btn-warning btn-sm me-2">
+                            <i class="fas fa-pause me-1"></i>暂停
                         </button>
-                    </div>
-
-                    <!-- 上传进度 -->
-                    <div id="uploadProgress" class="mt-3 hidden">
-                        <div class="mb-2">
-                            <strong>上传进度</strong>
-                        </div>
-                        <div class="progress mb-2">
-                            <div id="progressBar" class="progress-bar upload-progress" role="progressbar"></div>
-                        </div>
-                        <div class="text-muted small">
-                            <span id="progressText">准备上传...</span>
-                        </div>
-                        <div class="mt-2">
-                            <button type="button" id="pauseUpload" class="btn btn-warning btn-sm me-2">
-                                <i class="fas fa-pause me-1"></i>暂停
-                            </button>
-                            <button type="button" id="resumeUpload" class="btn btn-success btn-sm" style="display: none;">
-                                <i class="fas fa-play me-1"></i>继续
-                            </button>
-                            <button type="button" id="cancelUpload" class="btn btn-danger btn-sm">
-                                <i class="fas fa-times me-1"></i>取消
-                            </button>
-                        </div>
+                        <button type="button" id="resumeUpload" class="btn btn-success btn-sm hidden">
+                            <i class="fas fa-play me-1"></i>继续
+                        </button>
+                        <button type="button" id="cancelUpload" class="btn btn-danger btn-sm">
+                            <i class="fas fa-times me-1"></i>取消
+                        </button>
                     </div>
                 </div>
             </div>
@@ -218,112 +188,97 @@
 
 {% block scripts %}
 <script>
+// 上传队列相关变量
+var uploadQueue = [];
+var currentUploadIndex = -1;
+var isUploading = false;
+var isPaused = false;
+
 // 分块上传相关变量
-let currentFile = null;
-let fileHash = null;
-let taskId = null;
-let chunkSize = 5 * 1024 * 1024; // 5MB
-let chunksCount = 0;
-let uploadedChunks = new Set();
-let isPaused = false;
-let isUploading = false;
+var currentFile = null;
+var fileHash = null;
+var taskId = null;
+var chunkSize = 5 * 1024 * 1024; // 当前分块大小
+var chunksCount = 0;
+var uploadedChunks = new Set();
+var isSubmitting = false;
 
 document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.querySelector('input[name="files"]');
-    const uploadButton = document.querySelector('button[type="submit"]');
+    const uploadButton = document.querySelector('#uploadButton');
+    const uploadForm = document.querySelector('#uploadForm form');
     const shareTypeSelect = document.querySelector('select[name="share_type"]');
     const expiryTypeSelect = document.querySelector('select[name="expiry_type"]');
     const allowedUsersGroup = document.getElementById('allowedUsersGroup');
     const expiryHoursGroup = document.getElementById('expiryHoursGroup');
     const customExpiryGroup = document.getElementById('customExpiryGroup');
 
-    const normalUploadForm = document.getElementById('normalUploadForm');
-    const chunkUploadForm = document.getElementById('chunkUploadForm');
-
-    // 文件选择事件 - 自动选择上传模式
+    // 文件选择事件 - 更新按钮文本和显示队列
     fileInput.addEventListener('change', function() {
         const files = this.files;
         if (files.length === 0) {
             uploadButton.innerHTML = '<i class="fas fa-upload me-2"></i>上传';
+            hideUploadQueue();
             return;
         }
 
-        // 检查是否有大文件（超过10MB）
-        const hasLargeFile = Array.from(files).some(file => file.size > 10 * 1024 * 1024);
-
-        if (hasLargeFile) {
-            // 显示分块上传界面
-            normalUploadForm.style.display = 'none';
-            chunkUploadForm.style.display = 'block';
-
-            // 设置分块上传的文件
-            const chunkFileInput = document.getElementById('chunkFileInput');
-            const startChunkUpload = document.getElementById('startChunkUpload');
-
-            if (files.length === 1) {
-                // 单个大文件，使用分块上传
-                currentFile = files[0];
-                startChunkUpload.disabled = false;
-                startChunkUpload.innerHTML = '<i class="fas fa-play me-2"></i>开始上传 ' + currentFile.name;
-            } else {
-                // 多个文件中有大文件，提示用户逐个上传
-                alert('检测到大文件，请逐个上传大文件。普通文件请重新选择。');
-                this.value = '';
-                return;
-            }
-        } else {
-            // 显示普通上传界面
-            normalUploadForm.style.display = 'block';
-            chunkUploadForm.style.display = 'none';
-            uploadButton.innerHTML = '<i class="fas fa-upload me-2"></i>上传 ' + files.length + ' 个文件';
-        }
+        uploadButton.innerHTML = '<i class="fas fa-upload me-2"></i>上传 ' + files.length + ' 个文件';
+        showUploadQueue(files);
     });
 
     // 分享类型选择事件
     shareTypeSelect.addEventListener('change', function() {
         if (this.value === 'specified_users') {
-            allowedUsersGroup.style.display = 'block';
+            allowedUsersGroup.classList.remove('hidden');
         } else {
-            allowedUsersGroup.style.display = 'none';
+            allowedUsersGroup.classList.add('hidden');
         }
     });
 
     // 过期类型选择事件
     expiryTypeSelect.addEventListener('change', function() {
-        expiryHoursGroup.style.display = 'none';
-        customExpiryGroup.style.display = 'none';
+        expiryHoursGroup.classList.add('hidden');
+        customExpiryGroup.classList.add('hidden');
 
         if (this.value === 'hours') {
-            expiryHoursGroup.style.display = 'block';
+            expiryHoursGroup.classList.remove('hidden');
         } else if (this.value === 'custom') {
-            customExpiryGroup.style.display = 'block';
+            customExpiryGroup.classList.remove('hidden');
         }
     });
 
-    // 分块上传相关事件
-    const chunkFileInput = document.getElementById('chunkFileInput');
-    const chunkSizeSelect = document.getElementById('chunkSize');
-    const startChunkUpload = document.getElementById('startChunkUpload');
-    const pauseUpload = document.getElementById('pauseUpload');
-    const resumeUpload = document.getElementById('resumeUpload');
-    const cancelUpload = document.getElementById('cancelUpload');
-
-    chunkFileInput.addEventListener('change', function() {
-        currentFile = this.files[0];
-        startChunkUpload.disabled = !currentFile;
-        if (currentFile) {
-            startChunkUpload.innerHTML = '<i class="fas fa-play me-2"></i>开始上传 ' + currentFile.name;
+    // 拦截表单提交，开始队列上传
+    uploadForm.addEventListener('submit', function(e) {
+        if (isSubmitting) {
+            e.preventDefault();
+            return;
         }
+
+        const files = fileInput.files;
+
+        if (files.length === 0) {
+            e.preventDefault();
+            alert('请选择要上传的文件');
+            return;
+        }
+
+        isSubmitting = true;
+        e.preventDefault(); // 阻止默认表单提交
+
+        // 创建上传队列（小文件优先）
+        uploadQueue = Array.from(files).sort((a, b) => a.size - b.size);
+        currentUploadIndex = -1;
+        isUploading = true;
+        isPaused = false;
+
+        // 开始队列上传
+        startQueueUpload();
     });
 
-    chunkSizeSelect.addEventListener('change', function() {
-        chunkSize = parseInt(this.value);
-    });
-
-    startChunkUpload.addEventListener('click', startUpload);
-    pauseUpload.addEventListener('click', pauseUploadProcess);
-    resumeUpload.addEventListener('click', resumeUploadProcess);
-    cancelUpload.addEventListener('click', cancelUploadProcess);
+    // 上传控制按钮事件
+    document.getElementById('pauseUpload').addEventListener('click', pauseUploadProcess);
+    document.getElementById('resumeUpload').addEventListener('click', resumeUploadProcess);
+    document.getElementById('cancelUpload').addEventListener('click', cancelUploadProcess);
 
     // 初始化显示状态
     shareTypeSelect.dispatchEvent(new Event('change'));
@@ -340,18 +295,40 @@ async function calculateFileHash(file) {
 
 // 创建上传任务
 async function createUploadTask() {
+    // 获取表单数据
+    const shareType = document.querySelector('select[name="share_type"]').value;
+    const allowView = document.querySelector('input[name="allow_view"]').checked;
+    const allowDownload = document.querySelector('input[name="allow_download"]').checked;
+    const allowEdit = document.querySelector('input[name="allow_edit"]').checked;
+    const password = document.querySelector('input[name="password"]').value;
+    const expiryType = document.querySelector('select[name="expiry_type"]').value;
+    const expiryHours = document.querySelector('select[name="expiry_hours"]')?.value;
+    const customExpiry = document.querySelector('input[name="custom_expiry"]')?.value;
+    const allowedUsers = document.querySelector('textarea[name="allowed_users"]')?.value;
+
+    const requestData = {
+        hash: fileHash,
+        file_name: currentFile.name,
+        file_size: currentFile.size,
+        content_type: currentFile.type || 'application/octet-stream',
+        chunk_size: chunkSize,
+        share_type: shareType,
+        allow_view: allowView,
+        allow_download: allowDownload,
+        allow_edit: allowEdit,
+        password: password,
+        expiry_type: expiryType,
+        expiry_hours: expiryHours,
+        custom_expiry: customExpiry,
+        allowed_users: allowedUsers
+    };
+
     const response = await fetch('/api/files/upload/create', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            hash: fileHash,
-            file_name: currentFile.name,
-            file_size: currentFile.size,
-            content_type: currentFile.type || 'application/octet-stream',
-            chunk_size: chunkSize
-        })
+        body: JSON.stringify(requestData)
     });
 
     const result = await response.json();
@@ -368,13 +345,11 @@ async function uploadChunk(chunkIndex) {
     const start = chunkIndex * chunkSize;
     const end = Math.min(start + chunkSize, currentFile.size);
     const chunk = currentFile.slice(start, end);
-
-    const formData = new FormData();
-    formData.append('chunk', chunk);
+    const buffer = await chunk.arrayBuffer();
 
     const response = await fetch(`/api/files/upload/chunk/${taskId}/${chunkIndex}`, {
         method: 'POST',
-        body: formData
+        body: new Blob([buffer])
     });
 
     if (!response.ok) {
@@ -391,23 +366,34 @@ async function completeUpload() {
         method: 'POST'
     });
 
-    const result = await response.json();
-
     if (!response.ok) {
-        throw new Error(result.error || '完成上传失败');
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+        } catch {
+            const errorText = await response.text();
+            errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
     }
 
+    const result = await response.json();
     return result;
 }
 
-// 开始上传
-async function startUpload() {
-    if (!currentFile) return;
+// 开始分块上传
+async function startChunkUpload() {
+    if (!currentFile) {
+        return;
+    }
 
     try {
+        // 重置上传状态（但保留currentFile）
+        resetUploadStateKeepFile();
+
         // 显示进度
-        document.getElementById('uploadProgress').style.display = 'block';
-        document.getElementById('startChunkUpload').disabled = true;
+        document.getElementById('uploadProgress').classList.remove('hidden');
 
         updateProgress(0, '计算文件哈希...');
 
@@ -416,12 +402,23 @@ async function startUpload() {
 
         updateProgress(10, '创建上传任务...');
 
-        // 创建上传任务
+        // 自动选择分块大小（根据文件大小）
+        if (currentFile.size > 100 * 1024 * 1024) { // > 100MB
+            chunkSize = 10 * 1024 * 1024; // 10MB
+        } else if (currentFile.size > 50 * 1024 * 1024) { // > 50MB
+            chunkSize = 5 * 1024 * 1024; // 5MB
+        } else {
+            chunkSize = 2 * 1024 * 1024; // 2MB
+        }
+
+
+
+        // 创建上传任务（使用正确的分块大小）
         const taskResult = await createUploadTask();
 
         if (taskResult.file_exists) {
-            updateProgress(100, '文件已存在，上传完成');
-            alert('文件已存在，无需重复上传');
+            updateProgress(100, '文件已存在，仅设置分享选项');
+            alert('文件已存在，仅设置分享选项');
             resetUpload();
             return;
         }
@@ -441,6 +438,34 @@ async function startUpload() {
         alert('上传失败: ' + error.message);
         resetUpload();
     }
+}
+
+// 重置上传状态变量
+function resetUploadState() {
+    currentFile = null;
+    fileHash = null;
+    taskId = null;
+    chunkSize = 5 * 1024 * 1024; // 重置为默认值
+    chunksCount = 0;
+    uploadedChunks.clear();
+    isPaused = false;
+    isUploading = false;
+}
+
+// 重置上传状态变量（保留currentFile）
+function resetUploadStateKeepFile() {
+    fileHash = null;
+    taskId = null;
+    chunkSize = 5 * 1024 * 1024; // 重置为默认值
+    chunksCount = 0;
+    uploadedChunks.clear();
+    isPaused = false;
+    isUploading = false;
+}
+
+// 开始上传（兼容旧代码）
+async function startUpload() {
+    return startChunkUpload();
 }
 
 // 上传所有分块
@@ -465,10 +490,24 @@ async function uploadAllChunks() {
 
     if (isUploading) {
         updateProgress(90, '完成上传...');
-        await completeUpload();
-        updateProgress(100, '上传完成！');
-        alert('文件上传成功！');
-        resetUpload();
+        try {
+            await completeUpload();
+            updateProgress(100, '上传完成！');
+            alert('文件上传成功！');
+            // 刷新页面以显示新上传的文件
+            window.location.reload();
+        } catch (error) {
+            console.error('完成上传失败:', error);
+            updateProgress(0, '合并失败: ' + error.message);
+
+            // 检查是否是分块文件丢失的错误
+            if (error.message.includes('分块文件已丢失')) {
+                alert('分块文件已丢失，请重新上传文件。');
+            } else {
+                alert('合并文件失败: ' + error.message + '\n请重新上传文件。');
+            }
+            resetUpload();
+        }
     }
 }
 
@@ -507,21 +546,229 @@ function updateProgress(percent, text) {
     progressText.textContent = text;
 }
 
+// 显示上传队列
+function showUploadQueue(files) {
+    const queueList = document.getElementById('queueList');
+    queueList.innerHTML = '';
+
+    // 按文件大小排序显示（小文件优先）
+    const sortedFiles = Array.from(files).sort((a, b) => a.size - b.size);
+
+    sortedFiles.forEach((file, index) => {
+        const fileSize = formatFileSize(file.size);
+        const fileType = file.size > 50 * 1024 * 1024 ? '大文件' : '小文件';
+
+        const queueItem = document.createElement('div');
+        queueItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+        queueItem.id = `queue-item-${index}`;
+        queueItem.innerHTML = `
+            <div>
+                <strong>${file.name}</strong>
+                <br>
+                <small class="text-muted">${fileSize} • ${fileType}</small>
+            </div>
+            <div>
+                <span class="badge bg-secondary" id="queue-status-${index}">等待中</span>
+            </div>
+        `;
+        queueList.appendChild(queueItem);
+    });
+
+    document.getElementById('uploadQueue').classList.remove('hidden');
+}
+
+// 隐藏上传队列
+function hideUploadQueue() {
+    document.getElementById('uploadQueue').classList.add('hidden');
+    document.getElementById('queueList').innerHTML = '';
+}
+
+// 开始队列上传
+async function startQueueUpload() {
+    if (uploadQueue.length === 0) return;
+
+    // 显示进度（不隐藏表单）
+    document.getElementById('uploadProgress').classList.remove('hidden');
+
+    for (let i = 0; i < uploadQueue.length; i++) {
+        if (!isUploading) break;
+
+        currentUploadIndex = i;
+        const file = uploadQueue[i];
+
+        // 更新队列状态
+        updateQueueStatus(i, '上传中', 'primary');
+
+        try {
+            // 检查是否暂停
+            while (isPaused) {
+                updateQueueStatus(i, '已暂停', 'warning');
+                await new Promise(resolve => setTimeout(resolve, 100));
+                if (!isUploading) return;
+                updateQueueStatus(i, '上传中', 'primary');
+            }
+
+            // 判断文件类型并上传
+            if (file.size > 50 * 1024 * 1024) {  // 50MB以上的文件使用分块上传
+                // 大文件：分块上传
+                await uploadLargeFile(file);
+            } else {
+                // 小文件：表单上传
+                await uploadSmallFile(file);
+            }
+
+            // 上传成功
+            updateQueueStatus(i, '已完成', 'success');
+
+        } catch (error) {
+            console.error(`文件 ${file.name} 上传失败:`, error);
+            updateQueueStatus(i, '失败', 'danger');
+
+            // 询问是否继续上传其他文件
+            if (!confirm(`文件 "${file.name}" 上传失败。是否继续上传其他文件？`)) {
+                isUploading = false;
+                break;
+            }
+        }
+    }
+
+    // 所有文件上传完成
+    if (isUploading) {
+        updateProgress(100, '所有文件上传完成！');
+        alert('所有文件上传完成！');
+        window.location.reload();
+    }
+
+    resetUpload();
+}
+
+// 上传小文件
+async function uploadSmallFile(file) {
+    const formData = new FormData();
+
+    // 添加表单数据
+    const shareType = document.querySelector('select[name="share_type"]').value;
+    const allowView = document.querySelector('input[name="allow_view"]').checked;
+    const allowDownload = document.querySelector('input[name="allow_download"]').checked;
+    const allowEdit = document.querySelector('input[name="allow_edit"]').checked;
+    const password = document.querySelector('input[name="password"]').value;
+    const expiryType = document.querySelector('select[name="expiry_type"]').value;
+    const expiryHours = document.querySelector('select[name="expiry_hours"]')?.value;
+    const customExpiry = document.querySelector('input[name="custom_expiry"]')?.value;
+    const allowedUsers = document.querySelector('textarea[name="allowed_users"]')?.value;
+
+    formData.append('files', file);
+    formData.append('share_type', shareType);
+    formData.append('allow_view', allowView);
+    formData.append('allow_download', allowDownload);
+    formData.append('allow_edit', allowEdit);
+    if (password) formData.append('password', password);
+    formData.append('expiry_type', expiryType);
+    if (expiryHours) formData.append('expiry_hours', expiryHours);
+    if (customExpiry) formData.append('custom_expiry', customExpiry);
+    if (allowedUsers) formData.append('allowed_users', allowedUsers);
+
+    const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`上传失败: ${errorText}`);
+    }
+}
+
+// 上传大文件
+async function uploadLargeFile(file) {
+    currentFile = file;
+
+    // 重置分块上传状态
+    resetUploadStateKeepFile();
+
+    updateProgress(0, `准备上传 ${file.name}...`);
+
+    // 计算文件哈希
+    fileHash = await calculateFileHash(file);
+
+    // 自动选择分块大小
+    if (file.size > 100 * 1024 * 1024) {
+        chunkSize = 10 * 1024 * 1024;
+    } else if (file.size > 50 * 1024 * 1024) {
+        chunkSize = 5 * 1024 * 1024;
+    } else {
+        chunkSize = 2 * 1024 * 1024;
+    }
+
+    // 创建上传任务
+    const taskResult = await createUploadTask();
+
+    if (taskResult.file_exists) {
+        return; // 文件已存在
+    }
+
+    taskId = taskResult.task_id;
+    chunksCount = taskResult.chunks_count;
+    isUploading = true;
+
+    // 上传所有分块
+    for (let i = 0; i < chunksCount; i++) {
+        if (!isUploading) break;
+
+        while (isPaused) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            if (!isUploading) return;
+        }
+
+        updateProgress((i / chunksCount) * 100, `上传 ${file.name} - 分块 ${i + 1}/${chunksCount}`);
+        await uploadChunk(i);
+    }
+
+    // 完成上传
+    if (isUploading) {
+        updateProgress(100, `完成 ${file.name} 上传`);
+        await completeUpload();
+    }
+}
+
+// 更新队列状态
+function updateQueueStatus(index, status, badgeClass) {
+    const statusElement = document.getElementById(`queue-status-${index}`);
+    if (statusElement) {
+        statusElement.textContent = status;
+        statusElement.className = `badge bg-${badgeClass}`;
+    }
+}
+
+// 格式化文件大小
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
 // 重置上传状态
 function resetUpload() {
+    uploadQueue = [];
+    currentUploadIndex = -1;
     currentFile = null;
     fileHash = null;
     taskId = null;
     uploadedChunks.clear();
     isPaused = false;
     isUploading = false;
+    isSubmitting = false;
 
-    document.getElementById('uploadProgress').style.display = 'none';
-    document.getElementById('startChunkUpload').disabled = true;
-    document.getElementById('startChunkUpload').innerHTML = '<i class="fas fa-play me-2"></i>开始分块上传';
+    // 隐藏进度和队列，显示表单
+    document.getElementById('uploadProgress').classList.add('hidden');
+    document.getElementById('uploadForm').classList.remove('hidden');
+    hideUploadQueue();
+
+    // 重置按钮状态
     document.getElementById('pauseUpload').style.display = 'inline-block';
-    document.getElementById('resumeUpload').style.display = 'none';
-    document.getElementById('chunkFileInput').value = '';
+    document.getElementById('resumeUpload').classList.add('hidden');
 }
 </script>
 {% endblock %}

@@ -12,7 +12,10 @@ def index():
     if current_user.is_authenticated:
         files = File.query.filter_by(user_id=current_user.id).all()
     else:
-        files = File.query.filter_by(is_public=True).all()
+        # 过滤过期的公开文件
+        files = File.query.filter_by(is_public=True).filter(
+            (File.expiry_time.is_(None)) | (File.expiry_time > datetime.utcnow())
+        ).all()
     return render_template('index.html', files=files, config=get_config_dict())
 
 @main_bp.route('/profile', methods=['GET', 'POST'])

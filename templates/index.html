@@ -26,9 +26,9 @@
                                         <div class="d-flex align-items-center mb-3">
                                             <i class="fas fa-file text-primary me-3 file-icon"></i>
                                             <div class="flex-grow-1">
-                                                <h6 class="card-title mb-1 text-truncate" title="{{ file.original_filename }}">
+                                                <h6 class="card-title mb-1 text-truncate" title="{{ file.raw_filename or file.original_filename }}">
                                                     <a href="{{ url_for('files.file_details', file_id=file.id) }}" class="text-decoration-none text-dark">
-                                                        {{ file.original_filename }}
+                                                        {{ (file.raw_filename or file.original_filename)[:30] + '...' if (file.raw_filename or file.original_filename)|length > 30 else (file.raw_filename or file.original_filename) }}
                                                     </a>
                                                 </h6>
                                                 <small class="text-muted">
