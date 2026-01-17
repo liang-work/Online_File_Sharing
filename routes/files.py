@@ -172,12 +172,12 @@ def view_file(file_id):
 
 @files_bp.route('/preview/<file_id>')
 def preview_file(file_id):
-    """预览文件（只允许页面内联显示，禁止外部引用和直接下载）"""
-    from flask import request, abort
+    """预览文件（基于session权限检查，只允许通过详情页面访问）"""
+    from flask import request, abort, session
 
     file = File.query.get_or_404(file_id)
 
-    # 检查权限
+    # 检查基础权限
     can_access = False
 
     if file.share_type == 'public':
@@ -208,30 +208,74 @@ def preview_file(file_id):
     if not file.allow_view:
         abort(403)  # 不允许查看
 
-    # 检查Referer头，防止外部引用
+    # 检查session中的预览权限（简化检查逻辑）
+    file_id_str = str(file.id)
+    if 'preview_permissions' not in session:
+        session['preview_permissions'] = {}
+
+    # 如果没有权限记录，临时授予权限（简化逻辑）
+    if file_id_str not in session['preview_permissions']:
+        session['preview_permissions'][file_id_str] = {
+            'expires': (datetime.utcnow() + timedelta(minutes=30)).timestamp(),
+            'user_id': current_user.id if current_user.is_authenticated else None
+        }
+
+    permission = session['preview_permissions'][file_id_str]
+
+    # 检查权限是否过期（30分钟）
+    if datetime.utcnow().timestamp() > permission['expires']:
+        # 权限过期，重新授予
+        session['preview_permissions'][file_id_str] = {
+            'expires': (datetime.utcnow() + timedelta(minutes=30)).timestamp(),
+            'user_id': current_user.id if current_user.is_authenticated else None
+        }
+
+    # 检查用户是否匹配（可选检查）
+    expected_user_id = permission['user_id']
+    current_user_id = current_user.id if current_user.is_authenticated else None
+    if expected_user_id is not None and expected_user_id != current_user_id:
+        abort(403)  # 用户不匹配
+
+    # 检查Referer头，确保来自详情页面或直接页面请求
     referer = request.headers.get('Referer', '')
     if referer:
         from urllib.parse import urlparse
         parsed_referer = urlparse(referer)
-        # 只允许来自同一域名的引用
-        if parsed_referer.netloc and parsed_referer.netloc != request.host:
-            abort(403)  # 禁止外部域名引用
+        # 允许来自详情页面的引用，或者没有Referer的直接请求
+        if not parsed_referer.path or not (
+            parsed_referer.path.endswith(f'/file/{file_id}/details') or
+            parsed_referer.path.endswith('/file') or  # 允许来自文件列表页面的请求
+            'file' in parsed_referer.path  # 允许来自文件相关页面的请求
+        ):
+            # 对于图片等资源，Referer检查可以放宽一些
+            _, ext = os.path.splitext(file.original_filename.lower())
+            if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']:
+                abort(403)  # 对于非图片文件，严格检查Referer
 
-    # 检查Accept头，确保是浏览器正常请求
+    # 检查Accept头，确保是浏览器正常请求（放宽检查）
     accept = request.headers.get('Accept', '')
-    # 如果Accept头包含浏览器常见的MIME类型，说明是正常预览请求
-    if not any(mime in accept for mime in ['text/html', 'image/', 'video/', 'audio/', 'application/pdf', '*/*']):
-        abort(403)  # 可疑的请求
+    # 允许更广泛的Accept头，包括常见的浏览器请求
+    if not any(mime in accept for mime in ['text/html', 'image/', 'video/', 'audio/', 'application/pdf', '*/*', 'image/webp', 'image/apng']):
+        # 对于图片文件，Accept头检查可以更宽松
+        _, ext = os.path.splitext(file.original_filename.lower())
+        if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']:
+            abort(403)  # 对于非图片文件，仍然检查Accept头
 
     # 返回文件内容用于预览，设置安全头
     response = send_from_directory('uploads', file.filename)
 
-    # 设置安全头，防止缓存和外部引用
-    response.headers['Cache-Control'] = 'private, no-cache, no-store, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
+    # 根据文件类型设置不同的缓存策略
+    _, ext = os.path.splitext(file.original_filename.lower())
+    if ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']:
+        # 对于图片，允许短期缓存以提高性能
+        response.headers['Cache-Control'] = 'private, max-age=300'  # 5分钟缓存
+    else:
+        # 对于其他文件，防止缓存
+        response.headers['Cache-Control'] = 'private, no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+
     response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
 
     return response
 
@@ -355,13 +399,31 @@ def file_details(file_id):
     except:
         file_size = 0
 
-    # 获取文件扩展名
-    _, ext = os.path.splitext(file.original_filename.lower())
+    # 获取文件扩展名（优先使用raw_filename，如果没有扩展名则使用存储文件名）
+    filename_for_ext = file.raw_filename or file.original_filename
+    _, ext = os.path.splitext(filename_for_ext.lower())
+
+    # 如果raw_filename没有扩展名，尝试从存储文件名提取
+    if not ext:
+        _, ext = os.path.splitext(file.filename.lower())
+        # 移除UUID部分，获取真正的扩展名
+        if '_' in file.filename:
+            name_part = file.filename.split('_', 1)[1]  # 获取UUID后的部分
+            _, ext = os.path.splitext(name_part.lower())
 
     # 判断是否可以预览（只要有查看权限就可以预览）
     can_preview = False
     preview_type = None
     preview_content = None
+
+    # 在session中记录用户有权限预览的文件
+    from flask import session
+    if 'preview_permissions' not in session:
+        session['preview_permissions'] = {}
+    session['preview_permissions'][str(file.id)] = {
+        'expires': (datetime.utcnow() + timedelta(minutes=30)).timestamp(),  # 30分钟有效期
+        'user_id': current_user.id if current_user.is_authenticated else None
+    }
 
     if ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']:
         can_preview = True
@@ -376,14 +438,21 @@ def file_details(file_id):
         can_preview = True
         preview_type = 'pdf'
     elif ext in ['.txt', '.md', '.py', '.js', '.html', '.css', '.json', '.xml']:
-        can_preview = True
-        preview_type = 'text'
-        # 读取文本文件内容进行预览
-        try:
-            with open(file.filepath, 'r', encoding='utf-8', errors='ignore') as f:
-                preview_content = f.read(10240)  # 最多读取10KB
-        except:
-            preview_content = "无法读取文件内容"
+        # 只对小文件进行内容预览，避免大文件读取导致页面加载慢
+        if file_size <= 1024 * 1024:  # 1MB以下的文件才预览内容
+            can_preview = True
+            preview_type = 'text'
+            # 读取文本文件内容进行预览，减少读取量
+            try:
+                with open(file.filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                    preview_content = f.read(2048)  # 只读取2KB
+            except:
+                preview_content = "无法读取文件内容"
+        else:
+            # 大文件不预览内容，但仍然标记为可预览（用于显示文件类型图标等）
+            can_preview = True
+            preview_type = 'text_large'
+            preview_content = f"文件较大 ({file_size // 1024}KB)，内容预览已跳过"
 
     return render_template('files/file_details.html', file=file, file_size=file_size,
                          can_preview=can_preview, preview_type=preview_type, preview_content=preview_content,

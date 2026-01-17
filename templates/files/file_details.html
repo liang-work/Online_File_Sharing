@@ -54,6 +54,11 @@
                                 <pre class="bg-white p-3 rounded border file-preview-text">
                                     <code>{{ preview_content|e }}</code>
                                 </pre>
+                            {% elif preview_type == 'text_large' %}
+                                <div class="bg-light p-3 rounded border text-center">
+                                    <i class="fas fa-file-alt fa-2x text-muted mb-2"></i>
+                                    <p class="mb-0 text-muted">{{ preview_content }}</p>
+                                </div>
                             {% endif %}
                         </div>
                     </div>
